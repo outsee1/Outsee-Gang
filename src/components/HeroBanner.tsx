@@ -4,9 +4,9 @@ const HeroBanner = () => {
   return (
     <section className="relative flex h-[60vh] items-center justify-center overflow-hidden border-b border-border bg-secondary">
       <div className="text-center">
-        <img src={brandLogo} alt="Logo" className="mx-auto mb-6 h-24 w-24 invert" />
+        <img src={brandLogo} alt="Outsee" className="mx-auto mb-6 h-32 w-auto" />
         <h1 className="font-display text-4xl font-bold uppercase tracking-[0.25em] text-foreground md:text-6xl">
-          Underground
+          Outsee
         </h1>
         <p className="mt-4 font-body text-sm uppercase tracking-[0.3em] text-muted-foreground">
           Moda autoral — Fora do circuito
