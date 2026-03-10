@@ -4,50 +4,48 @@
 
 @layer base {
   :root {
-    --background: 0 0% 92%;
-    --foreground: 0 0% 10%;
+    --background: 0 0% 5%;
+    --foreground: 0 0% 90%;
 
-    --card: 0 0% 92%;
-    --card-foreground: 0 0% 10%;
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 90%;
 
-    --popover: 0 0% 92%;
-    --popover-foreground: 0 0% 10%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 90%;
 
-    --primary: 0 0% 10%;
-    --primary-foreground: 0 0% 92%;
+    --primary: 0 0% 90%;
+    --primary-foreground: 0 0% 5%;
 
-    --secondary: 0 0% 85%;
-    --secondary-foreground: 0 0% 10%;
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 80%;
 
-    --muted: 0 0% 85%;
-    --muted-foreground: 0 0% 40%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 50%;
 
-    --accent: 90 44% 24%;
-    --accent-foreground: 0 0% 92%;
+    --accent: 0 72% 50%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 0 0% 78%;
-    --input: 0 0% 78%;
-    --ring: 90 44% 24%;
+    --border: 0 0% 18%;
+    --input: 0 0% 14%;
+    --ring: 0 72% 50%;
 
     --radius: 0px;
 
-    --sidebar-background: 0 0% 10%;
-    --sidebar-foreground: 0 0% 92%;
-    --sidebar-primary: 90 44% 24%;
-    --sidebar-primary-foreground: 0 0% 92%;
-    --sidebar-accent: 0 0% 18%;
-    --sidebar-accent-foreground: 0 0% 92%;
-    --sidebar-border: 0 0% 20%;
-    --sidebar-ring: 90 44% 24%;
+    --sidebar-background: 0 0% 5%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 0 72% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 0 0% 18%;
+    --sidebar-ring: 0 72% 50%;
 
-    /* Custom tokens */
-    --vault-bg: 0 0% 10%;
-    --vault-fg: 90 44% 24%;
+    --overlay: 0 0% 0% / 0.85;
 
-    --font-display: 'Cinzel', serif;
+    --font-display: 'Space Grotesk', sans-serif;
     --font-body: 'Space Grotesk', sans-serif;
   }
 }
@@ -60,30 +58,9 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
-    overflow: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
   }
-}
-
-/* Horizontal scroll */
-.horizontal-scroll {
-  display: flex;
-  overflow-x: auto;
-  overflow-y: hidden;
-  height: 100vh;
-  scroll-snap-type: x mandatory;
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.horizontal-scroll::-webkit-scrollbar {
-  display: none;
-}
-
-.scroll-section {
-  flex: 0 0 auto;
-  scroll-snap-align: start;
 }
