@@ -7,14 +7,14 @@ export default {
   theme: {
     container: {
       center: true,
-      padding: "2rem",
+      padding: "1rem",
       screens: {
         "2xl": "1400px",
       },
     },
     extend: {
       fontFamily: {
-        display: ["Cinzel", "serif"],
+        display: ["Space Grotesk", "sans-serif"],
         body: ["Space Grotesk", "sans-serif"],
       },
       colors: {
@@ -50,10 +50,6 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
-        },
-        vault: {
-          DEFAULT: "hsl(var(--vault-bg))",
-          foreground: "hsl(var(--vault-fg))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
