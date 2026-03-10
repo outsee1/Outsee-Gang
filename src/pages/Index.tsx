@@ -19,7 +19,7 @@ const Index = () => {
       <footer className="border-t border-border py-8">
         <div className="container text-center">
           <p className="font-body text-xs uppercase tracking-widest text-muted-foreground">
-            © 2026 Underground — Todos os direitos reservados
+            © 2026 Outsee — Todos os direitos reservados
           </p>
         </div>
       </footer>
