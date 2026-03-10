@@ -15,7 +15,8 @@ const products = [
 ];
 
 const ProductGrid = () => {
-  return (
+  const navigate = useNavigate();
+
     <section className="container py-12">
       <div className="mb-8 flex items-center justify-between">
         <h2 className="font-display text-xl font-semibold uppercase tracking-wider text-foreground">
