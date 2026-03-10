@@ -6,12 +6,12 @@ import product4 from "@/assets/product-4.jpg";
 import product5 from "@/assets/product-5.jpg";
 
 const products = [
-  { image: product1, name: "Sobretudo Noir", price: "R$ 2.890", tag: "NOVO" },
-  { image: product2, name: "Blazer Marfim", price: "R$ 2.290", tag: null },
-  { image: product3, name: "Calça Estrutura", price: "R$ 1.190", tag: "NOVO" },
-  { image: product4, name: "Tricot Grafite", price: "R$ 890", tag: null },
-  { image: product5, name: "Camisa Assimétrica", price: "R$ 990", tag: null },
-  { image: product1, name: "Sobretudo Noir II", price: "R$ 3.190", tag: "ESGOTANDO" },
+  { id: "1", image: product1, name: "Sobretudo Noir", price: "R$ 2.890", tag: "NOVO" },
+  { id: "2", image: product2, name: "Blazer Marfim", price: "R$ 2.290", tag: null },
+  { id: "3", image: product3, name: "Calça Estrutura", price: "R$ 1.190", tag: "NOVO" },
+  { id: "4", image: product4, name: "Tricot Grafite", price: "R$ 890", tag: null },
+  { id: "5", image: product5, name: "Camisa Assimétrica", price: "R$ 990", tag: null },
+  { id: "6", image: product1, name: "Sobretudo Noir II", price: "R$ 3.190", tag: "ESGOTANDO" },
 ];
 
 const ProductGrid = () => {
