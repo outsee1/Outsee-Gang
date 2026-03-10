@@ -15,7 +15,7 @@ const Header = ({ onProfileClick }: HeaderProps) => {
       <div className="container flex h-16 items-center justify-between gap-4">
         {/* Logo */}
         <a href="/" className="flex-shrink-0">
-          <img src={brandLogo} alt="Logo da marca" className="h-10 w-10 invert" />
+          <img src={brandLogo} alt="Outsee" className="h-10 w-auto" />
         </a>
 
         {/* Search bar - center */}
