@@ -12,7 +12,7 @@ const Header = ({ onProfileClick }: HeaderProps) => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
-  const { totalItems } = useCart();
+  const { totalItems, setCartOpen } = useCart();
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-sm">
