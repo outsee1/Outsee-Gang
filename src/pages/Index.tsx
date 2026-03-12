@@ -8,6 +8,7 @@ import { useCart } from "@/contexts/CartContext";
 
 const Index = () => {
   const [profileOpen, setProfileOpen] = useState(false);
+  const { cartOpen, setCartOpen } = useCart();
 
   return (
     <div className="min-h-screen bg-background">
