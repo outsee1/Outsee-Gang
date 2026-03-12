@@ -10,7 +10,7 @@ import { useCart } from "@/contexts/CartContext";
 const Checkout = () => {
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
-  const { items, removeItem, updateQuantity, clearCart, totalPrice } = useCart();
+  const { items, removeItem, updateQuantity, clearCart, totalPrice, cartOpen, setCartOpen } = useCart();
 
   const handleFinalize = () => {
     toast.success("Pedido realizado com sucesso!");
