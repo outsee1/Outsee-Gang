@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import Header from "@/components/Header";
 import ProfileModal from "@/components/ProfileModal";
 import { useCart } from "@/contexts/CartContext";
+import CartSlidePanel from "@/components/CartSlidePanel";
 import { products } from "@/data/products";
 
 const sizes = ["PP", "P", "M", "G", "GG"];
@@ -14,7 +15,7 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const { addItem } = useCart();
+  const { addItem, cartOpen, setCartOpen } = useCart();
 
   const product = products.find((p) => p.id === id);
 
@@ -37,6 +38,7 @@ const ProductDetail = () => {
       image: product.image,
     });
     toast.success(`${product.name} (${selectedSize}) adicionado ao carrinho`);
+    setCartOpen(true);
   };
 
   return (
@@ -120,6 +122,7 @@ const ProductDetail = () => {
       </div>
 
       <ProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
+      <CartSlidePanel isOpen={cartOpen} onClose={() => setCartOpen(false)} />
     </div>
   );
 };

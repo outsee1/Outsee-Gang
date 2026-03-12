@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 
@@ -12,25 +12,76 @@ type AuthMode = "login" | "register";
 interface UserData {
   name: string;
   email: string;
+  password: string;
 }
+
+const USERS_KEY = "outsee_users";
+const SESSION_KEY = "outsee_session";
+
+const getStoredUsers = (): UserData[] => {
+  try {
+    return JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
+  } catch {
+    return [];
+  }
+};
 
 const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
   const [mode, setMode] = useState<AuthMode>("login");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState<UserData | null>(null);
+  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const session = localStorage.getItem(SESSION_KEY);
+    if (session) {
+      try {
+        const parsed = JSON.parse(session);
+        setUser(parsed);
+        setIsLoggedIn(true);
+      } catch {}
+    }
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+
     if (mode === "register") {
-      setUser({ name: formData.name, email: formData.email });
+      const users = getStoredUsers();
+      if (users.find((u) => u.email === formData.email)) {
+        setError("E-mail já cadastrado.");
+        return;
+      }
+      const newUser: UserData = {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+      };
+      localStorage.setItem(USERS_KEY, JSON.stringify([...users, newUser]));
+      const session = { name: newUser.name, email: newUser.email };
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      setUser(session);
+      setIsLoggedIn(true);
     } else {
-      setUser({ name: formData.email.split("@")[0], email: formData.email });
+      const users = getStoredUsers();
+      const found = users.find(
+        (u) => u.email === formData.email && u.password === formData.password
+      );
+      if (!found) {
+        setError("E-mail ou senha incorretos.");
+        return;
+      }
+      const session = { name: found.name, email: found.email };
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      setUser(session);
+      setIsLoggedIn(true);
     }
-    setIsLoggedIn(true);
   };
 
   const handleLogout = () => {
+    localStorage.removeItem(SESSION_KEY);
     setIsLoggedIn(false);
     setUser(null);
     setFormData({ name: "", email: "", password: "" });
@@ -40,7 +91,6 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             className="fixed inset-0 z-40 bg-[hsl(var(--overlay))]"
             initial={{ opacity: 0 }}
@@ -49,7 +99,6 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
             onClick={onClose}
           />
 
-          {/* Panel */}
           <motion.div
             className="fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col border-l border-border bg-card"
             initial={{ x: "100%" }}
@@ -57,7 +106,6 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
             exit={{ x: "100%" }}
             transition={{ type: "tween", duration: 0.3 }}
           >
-            {/* Header */}
             <div className="flex items-center justify-between border-b border-border p-6">
               <h2 className="font-display text-lg font-semibold uppercase tracking-wider text-foreground">
                 {isLoggedIn ? "Perfil" : mode === "login" ? "Entrar" : "Criar Conta"}
@@ -67,7 +115,6 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
               </button>
             </div>
 
-            {/* Content */}
             <div className="flex-1 overflow-y-auto p-6">
               {isLoggedIn && user ? (
                 <div className="flex flex-col items-center gap-4 pt-8">
@@ -87,6 +134,10 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="flex flex-col gap-5 pt-4">
+                  {error && (
+                    <p className="font-body text-xs text-accent">{error}</p>
+                  )}
+
                   {mode === "register" && (
                     <div>
                       <label className="mb-2 block font-body text-xs uppercase tracking-widest text-muted-foreground">
@@ -138,7 +189,7 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
 
                   <button
                     type="button"
-                    onClick={() => setMode(mode === "login" ? "register" : "login")}
+                    onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }}
                     className="font-body text-xs uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
                   >
                     {mode === "login" ? "Não tem conta? Criar uma" : "Já tem conta? Entrar"}

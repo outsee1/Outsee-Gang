@@ -4,12 +4,13 @@ import { ArrowLeft, Minus, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import ProfileModal from "@/components/ProfileModal";
+import CartSlidePanel from "@/components/CartSlidePanel";
 import { useCart } from "@/contexts/CartContext";
 
 const Checkout = () => {
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
-  const { items, removeItem, updateQuantity, clearCart, totalPrice } = useCart();
+  const { items, removeItem, updateQuantity, clearCart, totalPrice, cartOpen, setCartOpen } = useCart();
 
   const handleFinalize = () => {
     toast.success("Pedido realizado com sucesso!");
@@ -124,6 +125,7 @@ const Checkout = () => {
       </div>
 
       <ProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
+      <CartSlidePanel isOpen={cartOpen} onClose={() => setCartOpen(false)} />
     </div>
   );
 };
