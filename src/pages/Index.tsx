@@ -3,6 +3,8 @@ import Header from "@/components/Header";
 import HeroBanner from "@/components/HeroBanner";
 import ProductGrid from "@/components/ProductGrid";
 import ProfileModal from "@/components/ProfileModal";
+import CartSlidePanel from "@/components/CartSlidePanel";
+import { useCart } from "@/contexts/CartContext";
 
 const Index = () => {
   const [profileOpen, setProfileOpen] = useState(false);

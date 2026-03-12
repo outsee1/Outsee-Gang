@@ -4,6 +4,7 @@ import { ArrowLeft, Minus, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import ProfileModal from "@/components/ProfileModal";
+import CartSlidePanel from "@/components/CartSlidePanel";
 import { useCart } from "@/contexts/CartContext";
 
 const Checkout = () => {
