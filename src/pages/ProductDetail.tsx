@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import Header from "@/components/Header";
 import ProfileModal from "@/components/ProfileModal";
 import { useCart } from "@/contexts/CartContext";
+import CartSlidePanel from "@/components/CartSlidePanel";
 import { products } from "@/data/products";
 
 const sizes = ["PP", "P", "M", "G", "GG"];
