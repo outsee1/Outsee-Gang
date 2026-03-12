@@ -2,23 +2,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { products, categories } from "@/data/products";
 
-const priceRanges = [
-  { label: "Todos", min: 0, max: Infinity },
-  { label: "Até R$ 1.000", min: 0, max: 1000 },
-  { label: "R$ 1.000 – R$ 2.000", min: 1000, max: 2000 },
-  { label: "Acima de R$ 2.000", min: 2000, max: Infinity },
-];
-
 const ProductGrid = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedPriceRange, setSelectedPriceRange] = useState(0);
 
   const filtered = products.filter((p) => {
-    const catMatch = !selectedCategory || p.category === selectedCategory;
-    const range = priceRanges[selectedPriceRange];
-    const priceMatch = p.priceNum >= range.min && p.priceNum <= range.max;
-    return catMatch && priceMatch;
+    return !selectedCategory || p.category === selectedCategory;
   });
 
   return (
@@ -62,23 +51,6 @@ const ProductGrid = () => {
           ))}
         </div>
 
-        {/* Price */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="font-body text-xs uppercase tracking-widest text-muted-foreground">Preço:</span>
-          {priceRanges.map((range, i) => (
-            <button
-              key={range.label}
-              onClick={() => setSelectedPriceRange(i)}
-              className={`border px-3 py-1.5 font-body text-xs uppercase tracking-wider transition-colors ${
-                selectedPriceRange === i
-                  ? "border-foreground bg-foreground text-background"
-                  : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
-              }`}
-            >
-              {range.label}
-            </button>
-          ))}
-        </div>
       </div>
 
       {filtered.length === 0 ? (
