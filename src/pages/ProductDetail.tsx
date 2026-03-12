@@ -38,6 +38,7 @@ const ProductDetail = () => {
       image: product.image,
     });
     toast.success(`${product.name} (${selectedSize}) adicionado ao carrinho`);
+    setCartOpen(true);
   };
 
   return (
