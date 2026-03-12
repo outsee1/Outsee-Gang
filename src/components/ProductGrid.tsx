@@ -7,10 +7,7 @@ const ProductGrid = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const filtered = products.filter((p) => {
-    const catMatch = !selectedCategory || p.category === selectedCategory;
-    const range = priceRanges[selectedPriceRange];
-    const priceMatch = p.priceNum >= range.min && p.priceNum <= range.max;
-    return catMatch && priceMatch;
+    return !selectedCategory || p.category === selectedCategory;
   });
 
   return (
