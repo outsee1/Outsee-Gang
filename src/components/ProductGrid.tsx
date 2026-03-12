@@ -2,17 +2,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { products, categories } from "@/data/products";
 
-const priceRanges = [
-  { label: "Todos", min: 0, max: Infinity },
-  { label: "Até R$ 1.000", min: 0, max: 1000 },
-  { label: "R$ 1.000 – R$ 2.000", min: 1000, max: 2000 },
-  { label: "Acima de R$ 2.000", min: 2000, max: Infinity },
-];
-
 const ProductGrid = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedPriceRange, setSelectedPriceRange] = useState(0);
 
   const filtered = products.filter((p) => {
     const catMatch = !selectedCategory || p.category === selectedCategory;
