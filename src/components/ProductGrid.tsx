@@ -62,23 +62,6 @@ const ProductGrid = () => {
           ))}
         </div>
 
-        {/* Price */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="font-body text-xs uppercase tracking-widest text-muted-foreground">Preço:</span>
-          {priceRanges.map((range, i) => (
-            <button
-              key={range.label}
-              onClick={() => setSelectedPriceRange(i)}
-              className={`border px-3 py-1.5 font-body text-xs uppercase tracking-wider transition-colors ${
-                selectedPriceRange === i
-                  ? "border-foreground bg-foreground text-background"
-                  : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
-              }`}
-            >
-              {range.label}
-            </button>
-          ))}
-        </div>
       </div>
 
       {filtered.length === 0 ? (
