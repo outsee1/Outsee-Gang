@@ -53,7 +53,7 @@ const ProductDetail = () => {
         </button>
 
         <div className="grid gap-8 md:grid-cols-2">
-          <div className="relative aspect-[4/3] overflow-hidden bg-secondary">
+          <div className="relative aspect-square overflow-hidden bg-secondary">
             <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
             {product.tag && (
               <span className="absolute left-4 top-4 bg-accent px-3 py-1 font-body text-[10px] font-semibold uppercase tracking-wider text-accent-foreground">
