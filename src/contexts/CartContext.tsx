@@ -18,6 +18,8 @@ interface CartContextType {
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
+  cartOpen: boolean;
+  setCartOpen: (open: boolean) => void;
 }
 
 const CartContext = createContext<CartContextType | null>(null);
