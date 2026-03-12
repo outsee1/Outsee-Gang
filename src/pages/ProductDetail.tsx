@@ -15,7 +15,7 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const { addItem } = useCart();
+  const { addItem, cartOpen, setCartOpen } = useCart();
 
   const product = products.find((p) => p.id === id);
 
