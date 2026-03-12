@@ -93,7 +93,7 @@ const ProductGrid = () => {
               onClick={() => navigate(`/produto/${product.id}`)}
               className="group relative cursor-pointer bg-background"
             >
-              <div className="relative aspect-[3/4] overflow-hidden">
+              <div className="relative aspect-[4/3] overflow-hidden">
                 <img
                   src={product.image}
                   alt={product.name}
