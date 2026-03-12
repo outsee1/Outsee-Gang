@@ -50,7 +50,7 @@ const Header = ({ onProfileClick }: HeaderProps) => {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => navigate("/carrinho")}
+            onClick={() => setCartOpen(true)}
             className="relative flex-shrink-0 border border-border p-2 transition-colors hover:border-foreground hover:text-foreground"
           >
             <ShoppingBag className="h-5 w-5" />

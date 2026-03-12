@@ -122,6 +122,7 @@ const ProductDetail = () => {
       </div>
 
       <ProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
+      <CartSlidePanel isOpen={cartOpen} onClose={() => setCartOpen(false)} />
     </div>
   );
 };
