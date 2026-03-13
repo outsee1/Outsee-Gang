@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { X } from "lucide-react";
+import { X, Package } from "lucide-react";
+import { getOrders, Order } from "@/utils/orderHistory";
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -8,6 +9,7 @@ interface ProfileModalProps {
 }
 
 type AuthMode = "login" | "register";
+type ProfileTab = "profile" | "orders";
 
 interface UserData {
   name: string;
@@ -28,10 +30,12 @@ const getStoredUsers = (): UserData[] => {
 
 const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
   const [mode, setMode] = useState<AuthMode>("login");
+  const [tab, setTab] = useState<ProfileTab>("profile");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<{ name: string; email: string } | null>(null);
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState("");
+  const [orders, setOrders] = useState<Order[]>([]);
 
   useEffect(() => {
     const session = localStorage.getItem(SESSION_KEY);
@@ -43,6 +47,12 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
       } catch {}
     }
   }, []);
+
+  useEffect(() => {
+    if (isOpen && isLoggedIn) {
+      setOrders(getOrders());
+    }
+  }, [isOpen, isLoggedIn]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +94,13 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
     localStorage.removeItem(SESSION_KEY);
     setIsLoggedIn(false);
     setUser(null);
+    setTab("profile");
     setFormData({ name: "", email: "", password: "" });
+  };
+
+  const formatDate = (iso: string) => {
+    const d = new Date(iso);
+    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
   };
 
   return (
@@ -117,21 +133,88 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
 
             <div className="flex-1 overflow-y-auto p-6">
               {isLoggedIn && user ? (
-                <div className="flex flex-col items-center gap-4 pt-8">
-                  <div className="flex h-20 w-20 items-center justify-center border border-foreground">
-                    <span className="font-display text-2xl text-foreground">
-                      {user.name.charAt(0).toUpperCase()}
-                    </span>
+                <>
+                  {/* Tabs */}
+                  <div className="mb-6 flex border-b border-border">
+                    <button
+                      onClick={() => setTab("profile")}
+                      className={`flex-1 pb-3 font-body text-xs uppercase tracking-widest transition-colors ${
+                        tab === "profile"
+                          ? "border-b-2 border-foreground text-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Perfil
+                    </button>
+                    <button
+                      onClick={() => setTab("orders")}
+                      className={`flex-1 pb-3 font-body text-xs uppercase tracking-widest transition-colors ${
+                        tab === "orders"
+                          ? "border-b-2 border-foreground text-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Pedidos
+                    </button>
                   </div>
-                  <p className="font-body text-lg text-foreground">{user.name}</p>
-                  <p className="font-body text-sm text-muted-foreground">{user.email}</p>
-                  <button
-                    onClick={handleLogout}
-                    className="mt-6 w-full border border-border py-3 font-body text-xs uppercase tracking-widest text-foreground transition-colors hover:bg-foreground hover:text-background"
-                  >
-                    Sair da conta
-                  </button>
-                </div>
+
+                  {tab === "profile" ? (
+                    <div className="flex flex-col items-center gap-4 pt-4">
+                      <div className="flex h-20 w-20 items-center justify-center border border-foreground">
+                        <span className="font-display text-2xl text-foreground">
+                          {user.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <p className="font-body text-lg text-foreground">{user.name}</p>
+                      <p className="font-body text-sm text-muted-foreground">{user.email}</p>
+                      <button
+                        onClick={handleLogout}
+                        className="mt-6 w-full border border-border py-3 font-body text-xs uppercase tracking-widest text-foreground transition-colors hover:bg-foreground hover:text-background"
+                      >
+                        Sair da conta
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {orders.length === 0 ? (
+                        <div className="flex flex-col items-center gap-3 pt-8">
+                          <Package className="h-10 w-10 text-muted-foreground" />
+                          <p className="font-body text-sm text-muted-foreground">
+                            Nenhum pedido realizado.
+                          </p>
+                        </div>
+                      ) : (
+                        orders.map((order) => (
+                          <div key={order.id} className="border border-border p-4">
+                            <div className="mb-3 flex items-center justify-between">
+                              <span className="font-body text-xs text-muted-foreground">
+                                {formatDate(order.date)}
+                              </span>
+                              <span className="font-display text-sm font-bold text-foreground">
+                                R$ {order.totalPrice.toLocaleString("pt-BR")}
+                              </span>
+                            </div>
+                            <div className="mb-2 space-y-1">
+                              {order.items.map((item, i) => (
+                                <p key={i} className="font-body text-xs text-foreground">
+                                  {item.quantity}x {item.name} ({item.size})
+                                </p>
+                              ))}
+                            </div>
+                            <div className="flex items-center justify-between border-t border-border pt-2">
+                              <span className="font-body text-[10px] uppercase tracking-widest text-muted-foreground">
+                                {order.payment}
+                              </span>
+                              <span className="font-body text-[10px] text-muted-foreground">
+                                {order.address}
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </>
               ) : (
                 <form onSubmit={handleSubmit} className="flex flex-col gap-5 pt-4">
                   {error && (

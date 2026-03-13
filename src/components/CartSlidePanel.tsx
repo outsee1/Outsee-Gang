@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { X, Minus, Plus } from "lucide-react";
+import { X, Minus, Plus, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
+import { saveOrder } from "@/utils/orderHistory";
 import brandLogo from "@/assets/brand-logo.png";
 
 interface CartSlidePanelProps {
@@ -13,10 +14,20 @@ interface CartSlidePanelProps {
 
 type Step = "cart" | "checkout";
 
+interface AddressData {
+  logradouro: string;
+  bairro: string;
+  localidade: string;
+  uf: string;
+}
+
 const CartSlidePanel = ({ isOpen, onClose }: CartSlidePanelProps) => {
   const navigate = useNavigate();
   const { items, removeItem, updateQuantity, clearCart, totalPrice, totalItems } = useCart();
   const [step, setStep] = useState<Step>("cart");
+  const [loadingCep, setLoadingCep] = useState(false);
+  const [address, setAddress] = useState<AddressData | null>(null);
+  const [cepError, setCepError] = useState("");
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -31,9 +42,25 @@ const CartSlidePanel = ({ isOpen, onClose }: CartSlidePanelProps) => {
 
   const handleFinalize = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!address) {
+      setCepError("Informe um CEP válido.");
+      return;
+    }
+    saveOrder({
+      items: [...items],
+      totalPrice,
+      firstName: form.firstName,
+      lastName: form.lastName,
+      cep: form.cep,
+      address: `${address.logradouro}, ${address.bairro} - ${address.localidade}/${address.uf}`,
+      payment: form.payment,
+      date: new Date().toISOString(),
+    });
     toast.success("Pedido realizado com sucesso!");
     clearCart();
     setStep("cart");
+    setForm({ firstName: "", lastName: "", cep: "", payment: "" });
+    setAddress(null);
     onClose();
     navigate("/");
   };
@@ -42,6 +69,43 @@ const CartSlidePanel = ({ isOpen, onClose }: CartSlidePanelProps) => {
     const digits = value.replace(/\D/g, "").slice(0, 8);
     if (digits.length > 5) return `${digits.slice(0, 5)}-${digits.slice(5)}`;
     return digits;
+  };
+
+  const fetchAddress = async (cep: string) => {
+    const digits = cep.replace(/\D/g, "");
+    if (digits.length !== 8) {
+      setAddress(null);
+      setCepError("");
+      return;
+    }
+    setLoadingCep(true);
+    setCepError("");
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+      const data = await res.json();
+      if (data.erro) {
+        setCepError("CEP não encontrado.");
+        setAddress(null);
+      } else {
+        setAddress({
+          logradouro: data.logradouro || "",
+          bairro: data.bairro || "",
+          localidade: data.localidade || "",
+          uf: data.uf || "",
+        });
+      }
+    } catch {
+      setCepError("Erro ao buscar CEP.");
+      setAddress(null);
+    } finally {
+      setLoadingCep(false);
+    }
+  };
+
+  const handleCepChange = (value: string) => {
+    const formatted = formatCep(value);
+    setForm({ ...form, cep: formatted });
+    fetchAddress(formatted);
   };
 
   return (
@@ -186,14 +250,27 @@ const CartSlidePanel = ({ isOpen, onClose }: CartSlidePanelProps) => {
                       <label className="mb-2 block font-body text-xs uppercase tracking-widest text-muted-foreground">
                         CEP
                       </label>
-                      <input
-                        type="text"
-                        value={form.cep}
-                        onChange={(e) => setForm({ ...form, cep: formatCep(e.target.value) })}
-                        required
-                        placeholder="00000-000"
-                        className="w-full border border-border bg-input px-4 py-3 font-body text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none"
-                      />
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={form.cep}
+                          onChange={(e) => handleCepChange(e.target.value)}
+                          required
+                          placeholder="00000-000"
+                          className="w-full border border-border bg-input px-4 py-3 font-body text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none"
+                        />
+                        {loadingCep && (
+                          <Loader2 className="absolute right-3 top-3.5 h-4 w-4 animate-spin text-muted-foreground" />
+                        )}
+                      </div>
+                      {cepError && (
+                        <p className="mt-1 font-body text-xs text-accent">{cepError}</p>
+                      )}
+                      {address && (
+                        <p className="mt-1 font-body text-xs text-muted-foreground">
+                          {address.logradouro && `${address.logradouro}, `}{address.bairro && `${address.bairro} - `}{address.localidade}/{address.uf}
+                        </p>
+                      )}
                     </div>
 
                     <div>
