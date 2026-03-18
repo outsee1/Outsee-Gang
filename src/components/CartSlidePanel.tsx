@@ -154,7 +154,9 @@ const CartSlidePanel = ({ isOpen, onClose }: CartSlidePanelProps) => {
                             <div className="flex items-start justify-between">
                               <div>
                                 <h3 className="font-body text-sm font-medium text-foreground">{item.name}</h3>
-                                <p className="font-body text-xs text-muted-foreground">Tam: {item.size}</p>
+                                <p className="font-body text-xs text-muted-foreground">
+                                  Tam: {item.size}{item.color ? ` · ${item.color}` : ""}
+                                </p>
                               </div>
                               <button onClick={() => removeItem(item.productId, item.size)}>
                                 <X className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
