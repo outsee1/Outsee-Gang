@@ -165,7 +165,7 @@ const CartSlidePanel = ({ isOpen, onClose }: CartSlidePanelProps) => {
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2 border border-border">
                                 <button
-                                  onClick={() => updateQuantity(item.productId, item.size, item.quantity - 1)}
+                                  onClick={() => updateQuantity(item.productId, item.size, item.quantity - 1, item.color)}
                                   className="p-1.5 text-muted-foreground hover:text-foreground"
                                 >
                                   <Minus className="h-3 w-3" />
