@@ -15,6 +15,7 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [selectedColorIdx, setSelectedColorIdx] = useState(0);
   const { addItem, cartOpen, setCartOpen } = useCart();
 
   const product = products.find((p) => p.id === id);
@@ -27,6 +28,10 @@ const ProductDetail = () => {
     );
   }
 
+  const hasColors = product.colors && product.colors.length > 0;
+  const currentImage = hasColors ? product.colors![selectedColorIdx].image : product.image;
+  const currentColorName = hasColors ? product.colors![selectedColorIdx].name : undefined;
+
   const handleAddToCart = () => {
     if (!selectedSize) return;
     addItem({
@@ -35,9 +40,11 @@ const ProductDetail = () => {
       price: product.price,
       priceNum: product.priceNum,
       size: selectedSize,
-      image: product.image,
+      image: currentImage,
+      color: currentColorName,
     });
-    toast.success(`${product.name} (${selectedSize}) adicionado ao carrinho`);
+    const colorLabel = currentColorName ? ` - ${currentColorName}` : "";
+    toast.success(`${product.name} (${selectedSize}${colorLabel}) adicionado ao carrinho`);
     setCartOpen(true);
   };
 
@@ -56,7 +63,7 @@ const ProductDetail = () => {
 
         <div className="grid gap-8 md:grid-cols-2">
           <div className="relative aspect-square overflow-hidden bg-secondary">
-            <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+            <img src={currentImage} alt={product.name} className="h-full w-full object-cover" />
             {product.tag && (
               <span className="absolute left-4 top-4 bg-accent px-3 py-1 font-body text-[10px] font-semibold uppercase tracking-wider text-accent-foreground">
                 {product.tag}
@@ -75,6 +82,41 @@ const ProductDetail = () => {
             <p className="font-body text-sm leading-relaxed text-muted-foreground">
               {product.description}
             </p>
+
+            {/* Color selector */}
+            {hasColors && (
+              <div>
+                <p className="mb-3 font-body text-xs uppercase tracking-widest text-muted-foreground">
+                  Cor: <span className="text-foreground">{product.colors![selectedColorIdx].name}</span>
+                </p>
+                <div className="flex gap-3">
+                  {product.colors!.map((color, idx) => (
+                    <button
+                      key={color.name}
+                      onClick={() => setSelectedColorIdx(idx)}
+                      className={`relative h-8 w-8 rounded-full border-2 transition-all ${
+                        selectedColorIdx === idx
+                          ? "border-foreground scale-110"
+                          : "border-border hover:border-muted-foreground"
+                      }`}
+                      style={{ backgroundColor: color.hex }}
+                      title={color.name}
+                    >
+                      {selectedColorIdx === idx && (
+                        <span className="absolute inset-0 flex items-center justify-center">
+                          <span
+                            className="block h-2 w-2 rounded-full"
+                            style={{
+                              backgroundColor: ["#F5F5F0", "#A0A0A0"].includes(color.hex) ? "#000" : "#fff",
+                            }}
+                          />
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div>
               <p className="mb-3 font-body text-xs uppercase tracking-widest text-muted-foreground">Tamanho</p>

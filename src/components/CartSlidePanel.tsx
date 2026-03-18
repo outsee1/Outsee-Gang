@@ -146,7 +146,7 @@ const CartSlidePanel = ({ isOpen, onClose }: CartSlidePanelProps) => {
                   ) : (
                     <div className="space-y-0 divide-y divide-border">
                       {items.map((item) => (
-                        <div key={`${item.productId}-${item.size}`} className="flex gap-4 py-4">
+                        <div key={`${item.productId}-${item.size}-${item.color || ""}`} className="flex gap-4 py-4">
                           <div className="h-20 w-20 flex-shrink-0 overflow-hidden bg-secondary">
                             <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
                           </div>
@@ -154,23 +154,25 @@ const CartSlidePanel = ({ isOpen, onClose }: CartSlidePanelProps) => {
                             <div className="flex items-start justify-between">
                               <div>
                                 <h3 className="font-body text-sm font-medium text-foreground">{item.name}</h3>
-                                <p className="font-body text-xs text-muted-foreground">Tam: {item.size}</p>
+                                <p className="font-body text-xs text-muted-foreground">
+                                  Tam: {item.size}{item.color ? ` · ${item.color}` : ""}
+                                </p>
                               </div>
-                              <button onClick={() => removeItem(item.productId, item.size)}>
+                              <button onClick={() => removeItem(item.productId, item.size, item.color)}>
                                 <X className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
                               </button>
                             </div>
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2 border border-border">
                                 <button
-                                  onClick={() => updateQuantity(item.productId, item.size, item.quantity - 1)}
+                                  onClick={() => updateQuantity(item.productId, item.size, item.quantity - 1, item.color)}
                                   className="p-1.5 text-muted-foreground hover:text-foreground"
                                 >
                                   <Minus className="h-3 w-3" />
                                 </button>
                                 <span className="font-body text-xs text-foreground">{item.quantity}</span>
                                 <button
-                                  onClick={() => updateQuantity(item.productId, item.size, item.quantity + 1)}
+                                  onClick={() => updateQuantity(item.productId, item.size, item.quantity + 1, item.color)}
                                   className="p-1.5 text-muted-foreground hover:text-foreground"
                                 >
                                   <Plus className="h-3 w-3" />
