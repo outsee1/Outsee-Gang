@@ -158,7 +158,7 @@ const CartSlidePanel = ({ isOpen, onClose }: CartSlidePanelProps) => {
                                   Tam: {item.size}{item.color ? ` · ${item.color}` : ""}
                                 </p>
                               </div>
-                              <button onClick={() => removeItem(item.productId, item.size)}>
+                              <button onClick={() => removeItem(item.productId, item.size, item.color)}>
                                 <X className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
                               </button>
                             </div>
