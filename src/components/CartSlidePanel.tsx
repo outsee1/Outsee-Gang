@@ -172,7 +172,7 @@ const CartSlidePanel = ({ isOpen, onClose }: CartSlidePanelProps) => {
                                 </button>
                                 <span className="font-body text-xs text-foreground">{item.quantity}</span>
                                 <button
-                                  onClick={() => updateQuantity(item.productId, item.size, item.quantity + 1)}
+                                  onClick={() => updateQuantity(item.productId, item.size, item.quantity + 1, item.color)}
                                   className="p-1.5 text-muted-foreground hover:text-foreground"
                                 >
                                   <Plus className="h-3 w-3" />
