@@ -146,7 +146,7 @@ const CartSlidePanel = ({ isOpen, onClose }: CartSlidePanelProps) => {
                   ) : (
                     <div className="space-y-0 divide-y divide-border">
                       {items.map((item) => (
-                        <div key={`${item.productId}-${item.size}`} className="flex gap-4 py-4">
+                        <div key={`${item.productId}-${item.size}-${item.color || ""}`} className="flex gap-4 py-4">
                           <div className="h-20 w-20 flex-shrink-0 overflow-hidden bg-secondary">
                             <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
                           </div>
