@@ -32,6 +32,8 @@ const CartSlidePanel = ({ isOpen, onClose }: CartSlidePanelProps) => {
     firstName: "",
     lastName: "",
     cep: "",
+    numero: "",
+    complemento: "",
     payment: "",
   });
 
@@ -46,23 +48,28 @@ const CartSlidePanel = ({ isOpen, onClose }: CartSlidePanelProps) => {
       setCepError("Informe um CEP válido.");
       return;
     }
-    saveOrder({
+    if (!form.numero.trim()) {
+      return;
+    }
+    const order = saveOrder({
       items: [...items],
       totalPrice,
       firstName: form.firstName,
       lastName: form.lastName,
       cep: form.cep,
-      address: `${address.logradouro}, ${address.bairro} - ${address.localidade}/${address.uf}`,
+      numero: form.numero,
+      complemento: form.complemento,
+      address: `${address.logradouro}, ${form.numero}${form.complemento ? ` - ${form.complemento}` : ""}, ${address.bairro} - ${address.localidade}/${address.uf}`,
       payment: form.payment,
       date: new Date().toISOString(),
     });
     toast.success("Pedido realizado com sucesso!");
     clearCart();
     setStep("cart");
-    setForm({ firstName: "", lastName: "", cep: "", payment: "" });
+    setForm({ firstName: "", lastName: "", cep: "", numero: "", complemento: "", payment: "" });
     setAddress(null);
     onClose();
-    navigate("/");
+    navigate(`/pedido-confirmado?id=${order.id}`);
   };
 
   const formatCep = (value: string) => {
@@ -107,6 +114,9 @@ const CartSlidePanel = ({ isOpen, onClose }: CartSlidePanelProps) => {
     setForm({ ...form, cep: formatted });
     fetchAddress(formatted);
   };
+
+  const inputClass =
+    "w-full border border-border bg-input px-4 py-3 font-body text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none transition-colors";
 
   return (
     <AnimatePresence>
@@ -222,57 +232,88 @@ const CartSlidePanel = ({ isOpen, onClose }: CartSlidePanelProps) => {
                   </div>
 
                   <form onSubmit={handleFinalize} className="flex flex-col gap-5">
-                    <div>
-                      <label className="mb-2 block font-body text-xs uppercase tracking-widest text-muted-foreground">
-                        Nome
-                      </label>
-                      <input
-                        type="text"
-                        value={form.firstName}
-                        onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-                        required
-                        className="w-full border border-border bg-input px-4 py-3 font-body text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block font-body text-xs uppercase tracking-widest text-muted-foreground">
-                        Sobrenome
-                      </label>
-                      <input
-                        type="text"
-                        value={form.lastName}
-                        onChange={(e) => setForm({ ...form, lastName: e.target.value })}
-                        required
-                        className="w-full border border-border bg-input px-4 py-3 font-body text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block font-body text-xs uppercase tracking-widest text-muted-foreground">
-                        CEP
-                      </label>
-                      <div className="relative">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="mb-2 block font-body text-xs uppercase tracking-widest text-muted-foreground">
+                          Nome
+                        </label>
                         <input
                           type="text"
-                          value={form.cep}
-                          onChange={(e) => handleCepChange(e.target.value)}
+                          value={form.firstName}
+                          onChange={(e) => setForm({ ...form, firstName: e.target.value })}
                           required
-                          placeholder="00000-000"
-                          className="w-full border border-border bg-input px-4 py-3 font-body text-sm text-foreground placeholder:text-muted-foreground focus:border-foreground focus:outline-none"
+                          className={inputClass}
                         />
-                        {loadingCep && (
-                          <Loader2 className="absolute right-3 top-3.5 h-4 w-4 animate-spin text-muted-foreground" />
+                      </div>
+                      <div>
+                        <label className="mb-2 block font-body text-xs uppercase tracking-widest text-muted-foreground">
+                          Sobrenome
+                        </label>
+                        <input
+                          type="text"
+                          value={form.lastName}
+                          onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+                          required
+                          className={inputClass}
+                        />
+                      </div>
+                    </div>
+
+                    {/* CEP + Número side by side */}
+                    <div className="grid grid-cols-5 gap-3">
+                      <div className="col-span-3">
+                        <label className="mb-2 block font-body text-xs uppercase tracking-widest text-muted-foreground">
+                          CEP
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={form.cep}
+                            onChange={(e) => handleCepChange(e.target.value)}
+                            required
+                            placeholder="00000-000"
+                            className={inputClass}
+                          />
+                          {loadingCep && (
+                            <Loader2 className="absolute right-3 top-3.5 h-4 w-4 animate-spin text-muted-foreground" />
+                          )}
+                        </div>
+                        {cepError && (
+                          <p className="mt-1 font-body text-xs text-accent">{cepError}</p>
                         )}
                       </div>
-                      {cepError && (
-                        <p className="mt-1 font-body text-xs text-accent">{cepError}</p>
-                      )}
-                      {address && (
-                        <p className="mt-1 font-body text-xs text-muted-foreground">
-                          {address.logradouro && `${address.logradouro}, `}{address.bairro && `${address.bairro} - `}{address.localidade}/{address.uf}
-                        </p>
-                      )}
+                      <div className="col-span-2">
+                        <label className="mb-2 block font-body text-xs uppercase tracking-widest text-muted-foreground">
+                          Número
+                        </label>
+                        <input
+                          type="text"
+                          value={form.numero}
+                          onChange={(e) => setForm({ ...form, numero: e.target.value })}
+                          required
+                          placeholder="Nº"
+                          className={inputClass}
+                        />
+                      </div>
+                    </div>
+
+                    {address && (
+                      <p className="-mt-3 font-body text-xs text-muted-foreground">
+                        {address.logradouro && `${address.logradouro}, `}{address.bairro && `${address.bairro} - `}{address.localidade}/{address.uf}
+                      </p>
+                    )}
+
+                    <div>
+                      <label className="mb-2 block font-body text-xs uppercase tracking-widest text-muted-foreground">
+                        Complemento
+                      </label>
+                      <input
+                        type="text"
+                        value={form.complemento}
+                        onChange={(e) => setForm({ ...form, complemento: e.target.value })}
+                        placeholder="Apto, bloco, referência..."
+                        className={inputClass}
+                      />
                     </div>
 
                     <div>

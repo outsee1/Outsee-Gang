@@ -7,6 +7,8 @@ export interface Order {
   firstName: string;
   lastName: string;
   cep: string;
+  numero: string;
+  complemento: string;
   address: string;
   payment: string;
   date: string;
