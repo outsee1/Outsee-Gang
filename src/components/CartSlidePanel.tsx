@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
 import { saveOrder } from "@/utils/orderHistory";
+import { supabase } from "@/integrations/supabase/client";
 import brandLogo from "@/assets/brand-logo.png";
 
 interface CartSlidePanelProps {
@@ -25,6 +26,7 @@ const CartSlidePanel = ({ isOpen, onClose }: CartSlidePanelProps) => {
   const navigate = useNavigate();
   const { items, removeItem, updateQuantity, clearCart, totalPrice, totalItems } = useCart();
   const [step, setStep] = useState<Step>("cart");
+  const [submitting, setSubmitting] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
   const [address, setAddress] = useState<AddressData | null>(null);
   const [cepError, setCepError] = useState("");
@@ -42,15 +44,17 @@ const CartSlidePanel = ({ isOpen, onClose }: CartSlidePanelProps) => {
     onClose();
   };
 
-  const handleFinalize = (e: React.FormEvent) => {
+  const handleFinalize = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!address) {
       setCepError("Informe um CEP válido.");
       return;
     }
-    if (!form.numero.trim()) {
-      return;
-    }
+    if (!form.numero.trim()) return;
+    if (!form.payment) return;
+
+    setSubmitting(true);
+
     const order = saveOrder({
       items: [...items],
       totalPrice,
@@ -63,11 +67,44 @@ const CartSlidePanel = ({ isOpen, onClose }: CartSlidePanelProps) => {
       payment: form.payment,
       date: new Date().toISOString(),
     });
+
+    // Try Mercado Pago checkout
+    if (form.payment === "Mercado Pago") {
+      try {
+        const mpItems = items.map((item) => ({
+          name: item.name,
+          price: typeof item.price === "string"
+            ? parseFloat(item.price.replace(/[^\d,]/g, "").replace(",", "."))
+            : item.price,
+          quantity: item.quantity,
+        }));
+
+        const { data, error } = await supabase.functions.invoke("create-mp-preference", {
+          body: {
+            items: mpItems,
+            payer: { firstName: form.firstName, lastName: form.lastName },
+            orderId: order.id,
+          },
+        });
+
+        if (error) throw error;
+        if (data?.init_point) {
+          clearCart();
+          window.location.href = data.init_point;
+          return;
+        }
+      } catch (err) {
+        console.error("MP error:", err);
+        toast.error("Erro ao conectar com Mercado Pago. Pedido salvo localmente.");
+      }
+    }
+
     toast.success("Pedido realizado com sucesso!");
     clearCart();
     setStep("cart");
     setForm({ firstName: "", lastName: "", cep: "", numero: "", complemento: "", payment: "" });
     setAddress(null);
+    setSubmitting(false);
     onClose();
     navigate(`/pedido-confirmado?id=${order.id}`);
   };
@@ -321,7 +358,7 @@ const CartSlidePanel = ({ isOpen, onClose }: CartSlidePanelProps) => {
                         Forma de pagamento
                       </label>
                       <div className="flex flex-col gap-2">
-                        {["PIX", "Cartão de Crédito", "Boleto"].map((method) => (
+                        {["Mercado Pago", "PIX", "Cartão de Crédito", "Boleto"].map((method) => (
                           <button
                             key={method}
                             type="button"
@@ -345,10 +382,11 @@ const CartSlidePanel = ({ isOpen, onClose }: CartSlidePanelProps) => {
                       </div>
                       <button
                         type="submit"
-                        disabled={!form.payment}
-                        className="w-full bg-foreground py-4 font-body text-xs uppercase tracking-widest text-background transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
+                        disabled={!form.payment || submitting}
+                        className="flex w-full items-center justify-center gap-2 bg-foreground py-4 font-body text-xs uppercase tracking-widest text-background transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
                       >
-                        Confirmar pedido
+                        {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                        {submitting ? "Processando..." : "Confirmar pedido"}
                       </button>
                     </div>
                   </form>

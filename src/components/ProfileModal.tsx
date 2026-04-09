@@ -20,6 +20,7 @@ interface UserData {
 
 const USERS_KEY = "outsee_users";
 const SESSION_KEY = "outsee_session";
+const ADMIN_SESSION_KEY = "outsee_admin_session";
 
 const getStoredUsers = (): UserData[] => {
   try {
@@ -58,6 +59,14 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    // Admin login check
+    if (mode === "login" && formData.email === "Admin" && formData.password === "Outsee@2026") {
+      localStorage.setItem(ADMIN_SESSION_KEY, "true");
+      onClose();
+      navigate("/admin");
+      return;
+    }
 
     if (mode === "register") {
       const users = getStoredUsers();
@@ -293,14 +302,14 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
 
                     <div>
                       <label className="mb-2 block font-body text-xs uppercase tracking-widest text-muted-foreground">
-                        E-mail
+                        {mode === "login" ? "E-mail ou Usuário" : "E-mail"}
                       </label>
                       <input
-                        type="email"
+                        type={mode === "register" ? "email" : "text"}
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         required
-                        placeholder="seu@email.com"
+                        placeholder={mode === "login" ? "seu@email.com" : "seu@email.com"}
                         className={inputClass}
                       />
                     </div>
