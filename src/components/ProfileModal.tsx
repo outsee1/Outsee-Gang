@@ -20,6 +20,7 @@ interface UserData {
 
 const USERS_KEY = "outsee_users";
 const SESSION_KEY = "outsee_session";
+const ADMIN_SESSION_KEY = "outsee_admin_session";
 
 const getStoredUsers = (): UserData[] => {
   try {
@@ -58,6 +59,14 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    // Admin login check
+    if (mode === "login" && formData.email === "Admin" && formData.password === "Outsee@2026") {
+      localStorage.setItem(ADMIN_SESSION_KEY, "true");
+      onClose();
+      navigate("/admin");
+      return;
+    }
 
     if (mode === "register") {
       const users = getStoredUsers();
