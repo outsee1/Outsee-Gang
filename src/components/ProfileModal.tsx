@@ -302,14 +302,14 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
 
                     <div>
                       <label className="mb-2 block font-body text-xs uppercase tracking-widest text-muted-foreground">
-                        E-mail
+                        {mode === "login" ? "E-mail ou Usuário" : "E-mail"}
                       </label>
                       <input
-                        type="email"
+                        type={mode === "register" ? "email" : "text"}
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         required
-                        placeholder="seu@email.com"
+                        placeholder={mode === "login" ? "seu@email.com" : "seu@email.com"}
                         className={inputClass}
                       />
                     </div>
