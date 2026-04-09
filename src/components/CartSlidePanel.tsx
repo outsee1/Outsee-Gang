@@ -358,7 +358,7 @@ const CartSlidePanel = ({ isOpen, onClose }: CartSlidePanelProps) => {
                         Forma de pagamento
                       </label>
                       <div className="flex flex-col gap-2">
-                        {["PIX", "Cartão de Crédito", "Boleto"].map((method) => (
+                        {["Mercado Pago", "PIX", "Cartão de Crédito", "Boleto"].map((method) => (
                           <button
                             key={method}
                             type="button"
