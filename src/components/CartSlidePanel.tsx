@@ -382,10 +382,11 @@ const CartSlidePanel = ({ isOpen, onClose }: CartSlidePanelProps) => {
                       </div>
                       <button
                         type="submit"
-                        disabled={!form.payment}
-                        className="w-full bg-foreground py-4 font-body text-xs uppercase tracking-widest text-background transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
+                        disabled={!form.payment || submitting}
+                        className="flex w-full items-center justify-center gap-2 bg-foreground py-4 font-body text-xs uppercase tracking-widest text-background transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
                       >
-                        Confirmar pedido
+                        {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                        {submitting ? "Processando..." : "Confirmar pedido"}
                       </button>
                     </div>
                   </form>
