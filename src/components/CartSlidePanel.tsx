@@ -68,34 +68,37 @@ const CartSlidePanel = ({ isOpen, onClose }: CartSlidePanelProps) => {
       date: new Date().toISOString(),
     });
 
-    // Try Mercado Pago checkout
-    if (form.payment === "Mercado Pago") {
+    // Stripe Checkout
+    if (form.payment === "Cartão de Crédito" || form.payment === "Stripe") {
       try {
-        const mpItems = items.map((item) => ({
+        const stripeItems = items.map((item) => ({
           name: item.name,
           price: typeof item.price === "string"
             ? parseFloat(item.price.replace(/[^\d,]/g, "").replace(",", "."))
             : item.price,
           quantity: item.quantity,
+          image: item.image,
         }));
 
-        const { data, error } = await supabase.functions.invoke("create-mp-preference", {
+        const origin = window.location.origin;
+        const { data, error } = await supabase.functions.invoke("create-stripe-checkout", {
           body: {
-            items: mpItems,
-            payer: { firstName: form.firstName, lastName: form.lastName },
+            items: stripeItems,
             orderId: order.id,
+            successUrl: `${origin}/pedido-confirmado?id=${order.id}`,
+            cancelUrl: `${origin}/`,
           },
         });
 
         if (error) throw error;
-        if (data?.init_point) {
+        if (data?.url) {
           clearCart();
-          window.location.href = data.init_point;
+          window.location.href = data.url;
           return;
         }
       } catch (err) {
-        console.error("MP error:", err);
-        toast.error("Erro ao conectar com Mercado Pago. Pedido salvo localmente.");
+        console.error("Stripe error:", err);
+        toast.error("Erro ao conectar com Stripe. Pedido salvo localmente.");
       }
     }
 
