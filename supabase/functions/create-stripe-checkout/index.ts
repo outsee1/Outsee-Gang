@@ -27,17 +27,20 @@ Deno.serve(async (req) => {
       });
     }
 
-    const lineItems = items.map((item: { name: string; price: number; quantity: number; image?: string }) => ({
-      price_data: {
-        currency: 'brl',
-        product_data: {
-          name: item.name,
-          ...(item.image ? { images: [item.image] } : {}),
+    const lineItems = items.map((item: { name: string; price: number; quantity: number; image?: string }) => {
+      const isValidUrl = item.image && (item.image.startsWith('http://') || item.image.startsWith('https://'));
+      return {
+        price_data: {
+          currency: 'brl',
+          product_data: {
+            name: item.name,
+            ...(isValidUrl ? { images: [item.image] } : {}),
+          },
+          unit_amount: Math.round(item.price * 100),
         },
-        unit_amount: Math.round(item.price * 100),
-      },
-      quantity: item.quantity,
-    }));
+        quantity: item.quantity,
+      };
+    });
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
