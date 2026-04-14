@@ -55,6 +55,9 @@ const CartSlidePanel = ({ isOpen, onClose }: CartSlidePanelProps) => {
 
     setSubmitting(true);
 
+    const fullAddress = `${address.logradouro}, ${form.numero}${form.complemento ? ` - ${form.complemento}` : ""}, ${address.bairro} - ${address.localidade}/${address.uf}`;
+
+    // Save order locally
     const order = saveOrder({
       items: [...items],
       totalPrice,
@@ -63,10 +66,27 @@ const CartSlidePanel = ({ isOpen, onClose }: CartSlidePanelProps) => {
       cep: form.cep,
       numero: form.numero,
       complemento: form.complemento,
-      address: `${address.logradouro}, ${form.numero}${form.complemento ? ` - ${form.complemento}` : ""}, ${address.bairro} - ${address.localidade}/${address.uf}`,
+      address: fullAddress,
       payment: form.payment,
       date: new Date().toISOString(),
     });
+
+    // Save order to database
+    try {
+      await supabase.from("orders").insert({
+        id: order.id,
+        first_name: form.firstName,
+        last_name: form.lastName,
+        email: null,
+        address: { cep: form.cep, numero: form.numero, complemento: form.complemento, full: fullAddress },
+        items: items.map((i) => ({ name: i.name, size: i.size, color: i.color, quantity: i.quantity, price: i.priceNum, image: i.image })),
+        total_price: totalPrice,
+        payment_method: form.payment,
+        status: "pending",
+      } as any);
+    } catch (err) {
+      console.error("Error saving order to DB:", err);
+    }
 
     // Stripe Checkout
     if (form.payment === "Cartão de Crédito" || form.payment === "Stripe") {

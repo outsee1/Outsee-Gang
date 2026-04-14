@@ -6,9 +6,7 @@ import Header from "@/components/Header";
 import ProfileModal from "@/components/ProfileModal";
 import { useCart } from "@/contexts/CartContext";
 import CartSlidePanel from "@/components/CartSlidePanel";
-import { products } from "@/data/products";
-
-const sizes = ["PP", "P", "M", "G", "GG"];
+import { useProducts } from "@/hooks/useProducts";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -17,8 +15,17 @@ const ProductDetail = () => {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColorIdx, setSelectedColorIdx] = useState(0);
   const { addItem, cartOpen, setCartOpen } = useCart();
+  const { data: products = [], isLoading } = useProducts();
 
   const product = products.find((p) => p.id === id);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <p className="font-body text-muted-foreground">Carregando...</p>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -28,19 +35,23 @@ const ProductDetail = () => {
     );
   }
 
-  const hasColors = product.colors && product.colors.length > 0;
-  const currentImage = hasColors ? product.colors![selectedColorIdx].image : product.image;
-  const currentColorName = hasColors ? product.colors![selectedColorIdx].name : undefined;
+  const hasColors = product.colors.length > 0;
+  const currentImage = hasColors
+    ? product.colors[selectedColorIdx]?.image_url || product.image_url
+    : product.image_url;
+  const currentColorName = hasColors ? product.colors[selectedColorIdx]?.name : undefined;
+
+  const availableSizes = product.sizes.filter((s) => s.available);
 
   const handleAddToCart = () => {
     if (!selectedSize) return;
     addItem({
       productId: product.id,
       name: product.name,
-      price: product.price,
-      priceNum: product.priceNum,
+      price: `R$ ${product.price.toLocaleString("pt-BR")}`,
+      priceNum: product.price,
       size: selectedSize,
-      image: currentImage,
+      image: currentImage || "",
       color: currentColorName,
     });
     const colorLabel = currentColorName ? ` - ${currentColorName}` : "";
@@ -63,7 +74,13 @@ const ProductDetail = () => {
 
         <div className="grid gap-8 md:grid-cols-2">
           <div className="relative aspect-square overflow-hidden bg-secondary">
-            <img src={currentImage} alt={product.name} className="h-full w-full object-cover" />
+            {currentImage ? (
+              <img src={currentImage} alt={product.name} className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center">
+                <span className="font-body text-muted-foreground">Sem imagem</span>
+              </div>
+            )}
             {product.tag && (
               <span className="absolute left-4 top-4 bg-accent px-3 py-1 font-body text-[10px] font-semibold uppercase tracking-wider text-accent-foreground">
                 {product.tag}
@@ -76,7 +93,9 @@ const ProductDetail = () => {
               <h1 className="font-display text-2xl font-bold uppercase tracking-wider text-foreground md:text-3xl">
                 {product.name}
               </h1>
-              <p className="mt-2 font-display text-xl text-foreground">{product.price}</p>
+              <p className="mt-2 font-display text-xl text-foreground">
+                R$ {product.price.toLocaleString("pt-BR")}
+              </p>
             </div>
 
             <p className="font-body text-sm leading-relaxed text-muted-foreground">
@@ -87,12 +106,12 @@ const ProductDetail = () => {
             {hasColors && (
               <div>
                 <p className="mb-3 font-body text-xs uppercase tracking-widest text-muted-foreground">
-                  Cor: <span className="text-foreground">{product.colors![selectedColorIdx].name}</span>
+                  Cor: <span className="text-foreground">{product.colors[selectedColorIdx]?.name}</span>
                 </p>
                 <div className="flex gap-3">
-                  {product.colors!.map((color, idx) => (
+                  {product.colors.map((color, idx) => (
                     <button
-                      key={color.name}
+                      key={color.id}
                       onClick={() => setSelectedColorIdx(idx)}
                       className={`relative h-8 w-8 rounded-full border-2 transition-all ${
                         selectedColorIdx === idx
@@ -121,17 +140,20 @@ const ProductDetail = () => {
             <div>
               <p className="mb-3 font-body text-xs uppercase tracking-widest text-muted-foreground">Tamanho</p>
               <div className="flex gap-2">
-                {sizes.map((size) => (
+                {product.sizes.map((sizeObj) => (
                   <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
+                    key={sizeObj.id}
+                    onClick={() => sizeObj.available && setSelectedSize(sizeObj.size)}
+                    disabled={!sizeObj.available}
                     className={`flex h-10 w-10 items-center justify-center border font-body text-xs transition-colors ${
-                      selectedSize === size
+                      !sizeObj.available
+                        ? "border-border text-muted-foreground line-through opacity-40 cursor-not-allowed"
+                        : selectedSize === sizeObj.size
                         ? "border-foreground bg-foreground text-background"
                         : "border-border text-foreground hover:border-foreground"
                     }`}
                   >
-                    {size}
+                    {sizeObj.size}
                   </button>
                 ))}
               </div>
