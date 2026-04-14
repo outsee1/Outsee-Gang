@@ -14,7 +14,151 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      orders: {
+        Row: {
+          address: Json | null
+          created_at: string
+          email: string | null
+          first_name: string
+          id: string
+          items: Json
+          last_name: string
+          payment_method: string
+          status: string
+          stripe_session_id: string | null
+          total_price: number
+          updated_at: string
+        }
+        Insert: {
+          address?: Json | null
+          created_at?: string
+          email?: string | null
+          first_name: string
+          id?: string
+          items?: Json
+          last_name?: string
+          payment_method?: string
+          status?: string
+          stripe_session_id?: string | null
+          total_price: number
+          updated_at?: string
+        }
+        Update: {
+          address?: Json | null
+          created_at?: string
+          email?: string | null
+          first_name?: string
+          id?: string
+          items?: Json
+          last_name?: string
+          payment_method?: string
+          status?: string
+          stripe_session_id?: string | null
+          total_price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      product_colors: {
+        Row: {
+          hex: string
+          id: string
+          image_url: string | null
+          name: string
+          product_id: string
+          sort_order: number
+        }
+        Insert: {
+          hex: string
+          id?: string
+          image_url?: string | null
+          name: string
+          product_id: string
+          sort_order?: number
+        }
+        Update: {
+          hex?: string
+          id?: string
+          image_url?: string | null
+          name?: string
+          product_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_colors_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_sizes: {
+        Row: {
+          available: boolean
+          id: string
+          product_id: string
+          size: string
+        }
+        Insert: {
+          available?: boolean
+          id?: string
+          product_id: string
+          size: string
+        }
+        Update: {
+          available?: boolean
+          id?: string
+          product_id?: string
+          size?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_sizes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          id: string
+          image_url: string | null
+          name: string
+          price: number
+          tag: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string | null
+          name: string
+          price: number
+          tag?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string | null
+          name?: string
+          price?: number
+          tag?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
