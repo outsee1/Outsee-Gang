@@ -1,36 +1,69 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Package, Users, TrendingUp, Eye } from "lucide-react";
+import { ArrowLeft, Package, TrendingUp, Users } from "lucide-react";
 import Header from "@/components/Header";
 import ProfileModal from "@/components/ProfileModal";
 import CartSlidePanel from "@/components/CartSlidePanel";
 import { useCart } from "@/contexts/CartContext";
-import { getOrders, Order } from "@/utils/orderHistory";
+import { supabase } from "@/integrations/supabase/client";
 
 const ADMIN_SESSION_KEY = "outsee_admin_session";
+
+interface DBOrder {
+  id: string;
+  first_name: string;
+  last_name: string;
+  items: any[];
+  total_price: number;
+  payment_method: string;
+  status: string;
+  created_at: string;
+}
 
 const AdminPanel = () => {
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const { cartOpen, setCartOpen } = useCart();
   const [isAuthed, setIsAuthed] = useState(false);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<DBOrder[]>([]);
 
   useEffect(() => {
     const session = localStorage.getItem(ADMIN_SESSION_KEY);
     if (session === "true") {
       setIsAuthed(true);
-      setOrders(getOrders());
+      fetchOrders();
     } else {
       navigate("/");
     }
   }, [navigate]);
 
-  const totalRevenue = orders.reduce((sum, o) => sum + o.totalPrice, 0);
-  const totalItems = orders.reduce((sum, o) => sum + o.items.reduce((s, i) => s + i.quantity, 0), 0);
+  const fetchOrders = async () => {
+    const { data } = await supabase
+      .from("orders")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (data) setOrders(data as unknown as DBOrder[]);
+  };
+
+  const totalRevenue = orders.reduce((sum, o) => sum + Number(o.total_price), 0);
+  const totalItems = orders.reduce(
+    (sum, o) => sum + (Array.isArray(o.items) ? o.items.reduce((s: number, i: any) => s + (i.quantity || 1), 0) : 0),
+    0
+  );
 
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+
+  const statusLabel = (s: string) => {
+    const map: Record<string, string> = { pending: "Pendente", paid: "Pago", failed: "Falhou" };
+    return map[s] || s;
+  };
+
+  const statusColor = (s: string) => {
+    if (s === "paid") return "text-green-500";
+    if (s === "failed") return "text-red-500";
+    return "text-yellow-500";
+  };
 
   const handleLogout = () => {
     localStorage.removeItem(ADMIN_SESSION_KEY);
@@ -101,27 +134,22 @@ const AdminPanel = () => {
             <div className="divide-y divide-border">
               {orders.map((order) => (
                 <div key={order.id} className="flex flex-col gap-3 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="flex -space-x-2">
-                      {order.items.slice(0, 3).map((item, idx) => (
-                        <div key={idx} className="h-10 w-10 overflow-hidden border-2 border-background bg-secondary">
-                          <img src={item.image} alt="" className="h-full w-full object-cover" />
-                        </div>
-                      ))}
-                    </div>
-                    <div>
-                      <p className="font-body text-sm font-medium text-foreground">
-                        {order.firstName} {order.lastName}
-                      </p>
-                      <p className="font-body text-xs text-muted-foreground">
-                        {order.items.length} {order.items.length === 1 ? "item" : "itens"} · {formatDate(order.date)}
-                      </p>
-                    </div>
+                  <div>
+                    <p className="font-body text-sm font-medium text-foreground">
+                      {order.first_name} {order.last_name}
+                    </p>
+                    <p className="font-body text-xs text-muted-foreground">
+                      {Array.isArray(order.items) ? order.items.length : 0}{" "}
+                      {(Array.isArray(order.items) ? order.items.length : 0) === 1 ? "item" : "itens"} · {formatDate(order.created_at)}
+                    </p>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className="font-body text-xs text-muted-foreground">{order.payment}</span>
+                    <span className={`font-body text-xs font-semibold uppercase ${statusColor(order.status)}`}>
+                      {statusLabel(order.status)}
+                    </span>
+                    <span className="font-body text-xs text-muted-foreground">{order.payment_method}</span>
                     <span className="font-display text-sm font-bold text-foreground">
-                      R$ {order.totalPrice.toLocaleString("pt-BR")}
+                      R$ {Number(order.total_price).toLocaleString("pt-BR")}
                     </span>
                   </div>
                 </div>
