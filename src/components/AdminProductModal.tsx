@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { X, Loader2, Trash2, Upload, Image as ImageIcon } from "lucide-react";
+import { X, Loader2, Trash2, Upload, Image as ImageIcon, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Product, useAdminUpdateProduct, useAdminCreateProduct, useAdminDeleteProduct } from "@/hooks/useProducts";
@@ -11,7 +11,7 @@ interface AdminProductModalProps {
   product?: Product | null;
 }
 
-const DEFAULT_SIZES = ["PP", "P", "M", "G", "GG", "XG"];
+const CLOTHING_SIZES = ["PP", "P", "M", "G", "GG", "XG"];
 
 interface ColorEntry {
   name: string;
@@ -42,6 +42,8 @@ const AdminProductModal = ({ isOpen, onClose, product }: AdminProductModalProps)
   const [tag, setTag] = useState("");
   const [category, setCategory] = useState("Moletons");
   const [sizeAvailability, setSizeAvailability] = useState<Record<string, boolean>>({});
+  const [customSizes, setCustomSizes] = useState<string[]>([]);
+  const [newCustomSize, setNewCustomSize] = useState("");
   const [colors, setColors] = useState<ColorEntry[]>([]);
   const [newColorName, setNewColorName] = useState("");
   const [newColorHex, setNewColorHex] = useState("#000000");
@@ -49,6 +51,8 @@ const AdminProductModal = ({ isOpen, onClose, product }: AdminProductModalProps)
   const [mainImageFile, setMainImageFile] = useState<File | null>(null);
   const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  const allSizes = [...CLOTHING_SIZES, ...customSizes];
 
   useEffect(() => {
     if (product) {
@@ -58,9 +62,14 @@ const AdminProductModal = ({ isOpen, onClose, product }: AdminProductModalProps)
       setTag(product.tag || "");
       setCategory(product.category);
       const avail: Record<string, boolean> = {};
-      product.sizes.forEach((s) => { avail[s.size] = s.available; });
-      DEFAULT_SIZES.forEach((s) => { if (!(s in avail)) avail[s] = true; });
+      const extras: string[] = [];
+      product.sizes.forEach((s) => {
+        avail[s.size] = s.available;
+        if (!CLOTHING_SIZES.includes(s.size)) extras.push(s.size);
+      });
+      CLOTHING_SIZES.forEach((s) => { if (!(s in avail)) avail[s] = true; });
       setSizeAvailability(avail);
+      setCustomSizes(extras);
       setColors(product.colors.map((c) => ({ name: c.name, hex: c.hex, image_url: c.image_url })));
       setMainImageFile(null);
       setMainImagePreview(product.image_url || null);
@@ -68,13 +77,30 @@ const AdminProductModal = ({ isOpen, onClose, product }: AdminProductModalProps)
       setName(""); setDescription(""); setPrice(""); setTag("");
       setCategory("Moletons");
       const avail: Record<string, boolean> = {};
-      DEFAULT_SIZES.forEach((s) => { avail[s] = true; });
+      CLOTHING_SIZES.forEach((s) => { avail[s] = true; });
       setSizeAvailability(avail);
+      setCustomSizes([]);
       setColors([]);
       setMainImageFile(null);
       setMainImagePreview(null);
     }
+    setNewCustomSize("");
   }, [product, isOpen]);
+
+  const addCustomSize = () => {
+    const s = newCustomSize.trim();
+    if (!s || allSizes.includes(s)) return;
+    setCustomSizes([...customSizes, s]);
+    setSizeAvailability({ ...sizeAvailability, [s]: true });
+    setNewCustomSize("");
+  };
+
+  const removeCustomSize = (size: string) => {
+    setCustomSizes(customSizes.filter((s) => s !== size));
+    const next = { ...sizeAvailability };
+    delete next[size];
+    setSizeAvailability(next);
+  };
 
   const handleSave = async () => {
     if (!name.trim() || !price.trim()) {
@@ -86,14 +112,12 @@ const AdminProductModal = ({ isOpen, onClose, product }: AdminProductModalProps)
       setUploading(true);
       const timestamp = Date.now();
 
-      // Upload main image if provided
       let mainImageUrl: string | undefined;
       if (mainImageFile) {
         const ext = mainImageFile.name.split(".").pop();
         mainImageUrl = await uploadImage(mainImageFile, `main/${timestamp}-${name.replace(/\s/g, "_")}.${ext}`);
       }
 
-      // Upload color images
       const processedColors = await Promise.all(
         colors.map(async (c, i) => {
           let image_url = c.image_url || null;
@@ -108,16 +132,17 @@ const AdminProductModal = ({ isOpen, onClose, product }: AdminProductModalProps)
       if (isEdit && product) {
         const updates: Record<string, any> = {
           name, description, price: parseFloat(price), tag: tag || null, category,
-          sizes: product.sizes.map((s) => ({ id: s.id, available: sizeAvailability[s.size] ?? true })),
+          sizes: Object.entries(sizeAvailability).map(([size, available]) => {
+            const existing = product.sizes.find((s) => s.size === size);
+            return existing ? { id: existing.id, available } : { size, available };
+          }),
+          colors: processedColors,
         };
         if (mainImageUrl) updates.image_url = mainImageUrl;
-        // Pass colors with updated image_urls
-        updates.colors = processedColors;
-
         await updateMutation.mutateAsync({ productId: product.id, updates });
         toast.success("Produto atualizado!");
       } else {
-        const sizes = DEFAULT_SIZES.map((s) => ({ size: s, available: sizeAvailability[s] ?? true }));
+        const sizes = allSizes.map((s) => ({ size: s, available: sizeAvailability[s] ?? true }));
         await createMutation.mutateAsync({
           name, description, price: parseFloat(price),
           tag: tag || undefined, category,
@@ -249,7 +274,7 @@ const AdminProductModal = ({ isOpen, onClose, product }: AdminProductModalProps)
                   Tamanhos (clique para marcar indisponível)
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {DEFAULT_SIZES.map((size) => (
+                  {CLOTHING_SIZES.map((size) => (
                     <button key={size} type="button"
                       onClick={() => setSizeAvailability({ ...sizeAvailability, [size]: !sizeAvailability[size] })}
                       className={`flex h-10 w-10 items-center justify-center border font-body text-xs transition-colors ${
@@ -261,6 +286,43 @@ const AdminProductModal = ({ isOpen, onClose, product }: AdminProductModalProps)
                       {size}
                     </button>
                   ))}
+                  {customSizes.map((size) => (
+                    <div key={size} className="relative">
+                      <button type="button"
+                        onClick={() => setSizeAvailability({ ...sizeAvailability, [size]: !sizeAvailability[size] })}
+                        className={`flex h-10 min-w-[40px] items-center justify-center border px-2 font-body text-xs transition-colors ${
+                          sizeAvailability[size]
+                            ? "border-foreground bg-foreground text-background"
+                            : "border-border text-muted-foreground line-through opacity-50"
+                        }`}
+                      >
+                        {size}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeCustomSize(size)}
+                        className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center bg-accent text-accent-foreground text-[8px]"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                  <input
+                    value={newCustomSize}
+                    onChange={(e) => setNewCustomSize(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addCustomSize())}
+                    className={`${inputClass} flex-1`}
+                    placeholder="Ex: 38, 39, 40..."
+                  />
+                  <button
+                    type="button"
+                    onClick={addCustomSize}
+                    className="flex items-center gap-1 border border-border px-3 py-3 font-body text-xs text-foreground hover:bg-foreground hover:text-background transition-colors"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </button>
                 </div>
               </div>
 

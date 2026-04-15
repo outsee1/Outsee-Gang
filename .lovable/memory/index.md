@@ -1,24 +1,18 @@
-Outsee streetwear e-commerce. Dark theme, conventional layout, minimal animations.
+# Project Memory
 
-## Design System
-- Background: near-black (#0D0D0D)
-- Foreground: light gray (#E6E6E6)  
-- Accent: red (hsl 0 72% 50%)
-- Cards: #141414
-- Font: Space Grotesk (display + body)
-- Border radius: 0px (sharp edges)
-- No carousels, no horizontal scroll, no vault animations
-- Brand name: Outsee (graffiti-style logo at src/assets/brand-logo.png)
+## Core
+Outsee brand: Dark theme (#0D0D0D), red accents, 0px border-radius, Space Grotesk. 1:1 product images.
+Storefront: Filter by category only. Inline visual editing for admins. Drag-drop reordering.
+Tech Stack: Supabase (`products`, `orders`, `user_roles`), Stripe via Edge Functions, Supabase Auth.
+Checkout Flow: ViaCEP. Save order in DB *before* payment. Mandatory Number/Complement.
+Contact: WhatsApp floating button (+5519989067693).
+Admin Access: Supabase Auth with `user_roles` table (app_role enum). No more localStorage auth.
+Sizes: Support both text (PP-XG) and numeric (38, 39...) sizes for clothing and shoes.
 
-## Rejections
-- Horizontal scroll layout rejected — user wants normal navigation
-- Vault door animation rejected — too complex
-- Floating circle buttons rejected — wants conventional header
-- Brutalist/architectural aesthetic rejected — wants underground streetwear
-
-## Structure
-- Header: Outsee logo PNG left, search center, profile icon right
-- Hero banner with brand logo
-- Vertical product grid (2-3 columns), clickable → /produto/:id
-- Product detail page with sizes, description, buy button
-- Profile system: slide-in panel from right
+## Memories
+- [Brand Identity & Styling](mem://identidade/marca-e-estilo) — Visual design rules, colors, and typography for Outsee
+- [Catalog & Products](mem://loja/catalogo-e-produtos) — Supabase product tables, variants, and filtering rules
+- [Checkout & Orders Flow](mem://loja/checkout-e-pedidos) — Checkout validation, ViaCEP, and order creation sequence
+- [Third-Party Integrations](mem://integracoes/servicos-externos) — WhatsApp contact, Stripe payments, and Edge Functions webhooks
+- [User Profile & Authentication](mem://usuario/perfil-e-autenticacao) — Supabase Auth email/password, user_roles for admin
+- [Admin Panel](mem://admin/controle-administrativo) — Admin auth via Supabase, metrics dashboard, inline editing, drag-drop sort

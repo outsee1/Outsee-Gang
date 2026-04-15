@@ -23,6 +23,7 @@ export interface Product {
   tag: string | null;
   category: string;
   image_url: string | null;
+  sort_order: number;
   colors: ProductColor[];
   sizes: ProductSize[];
 }
@@ -34,7 +35,7 @@ export function useProducts() {
       const { data: products, error } = await supabase
         .from("products")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("sort_order", { ascending: true });
 
       if (error) throw error;
 
@@ -55,6 +56,7 @@ export function useProducts() {
         tag: p.tag,
         category: p.category,
         image_url: p.image_url,
+        sort_order: p.sort_order ?? 0,
         colors: (colors || []).filter((c: any) => c.product_id === p.id).map((c: any) => ({
           id: c.id,
           name: c.name,

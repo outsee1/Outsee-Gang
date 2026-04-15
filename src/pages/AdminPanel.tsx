@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Package, TrendingUp, Users } from "lucide-react";
+import { ArrowLeft, Package, TrendingUp, Users, Loader2 } from "lucide-react";
 import Header from "@/components/Header";
 import ProfileModal from "@/components/ProfileModal";
 import CartSlidePanel from "@/components/CartSlidePanel";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
-
-const ADMIN_SESSION_KEY = "outsee_admin_session";
+import { useAdminAuth } from "@/hooks/useAdmin";
 
 interface DBOrder {
   id: string;
@@ -24,18 +23,18 @@ const AdminPanel = () => {
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const { cartOpen, setCartOpen } = useCart();
-  const [isAuthed, setIsAuthed] = useState(false);
+  const { isAdmin, loading: authLoading, logout } = useAdminAuth();
   const [orders, setOrders] = useState<DBOrder[]>([]);
 
   useEffect(() => {
-    const session = localStorage.getItem(ADMIN_SESSION_KEY);
-    if (session === "true") {
-      setIsAuthed(true);
-      fetchOrders();
-    } else {
+    if (!authLoading && !isAdmin) {
       navigate("/");
     }
-  }, [navigate]);
+  }, [authLoading, isAdmin, navigate]);
+
+  useEffect(() => {
+    if (isAdmin) fetchOrders();
+  }, [isAdmin]);
 
   const fetchOrders = async () => {
     const { data } = await supabase
@@ -65,12 +64,20 @@ const AdminPanel = () => {
     return "text-yellow-500";
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem(ADMIN_SESSION_KEY);
+  const handleLogout = async () => {
+    await logout();
     navigate("/");
   };
 
-  if (!isAuthed) return null;
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) return null;
 
   return (
     <div className="min-h-screen bg-background">

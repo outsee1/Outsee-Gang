@@ -68,11 +68,15 @@ Deno.serve(async (req) => {
       }
 
       if (sizes) {
-        for (const s of sizes) {
-          await supabase
-            .from("product_sizes")
-            .update({ available: s.available })
-            .eq("id", s.id);
+        // Delete existing sizes and re-insert to handle new custom sizes
+        await supabase.from("product_sizes").delete().eq("product_id", productId);
+        if (sizes.length > 0) {
+          const sizeRows = sizes.map((s: any) => ({
+            product_id: productId,
+            size: s.size,
+            available: s.available ?? true,
+          }));
+          await supabase.from("product_sizes").insert(sizeRows);
         }
       }
 
