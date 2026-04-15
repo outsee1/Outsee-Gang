@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { X, Package, User, LogOut, Mail, Shield, ChevronRight } from "lucide-react";
+import { X, Package, User, LogOut, Mail, Shield, ChevronRight, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { getOrders, Order } from "@/utils/orderHistory";
+import { toast } from "sonner";
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -11,43 +13,60 @@ interface ProfileModalProps {
 
 type AuthMode = "login" | "register";
 
-interface UserData {
-  name: string;
-  email: string;
-  password: string;
-  phone?: string;
-}
-
-const USERS_KEY = "outsee_users";
-const SESSION_KEY = "outsee_session";
-const ADMIN_SESSION_KEY = "outsee_admin_session";
-
-const getStoredUsers = (): UserData[] => {
-  try {
-    return JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
-  } catch {
-    return [];
-  }
-};
-
 const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
   const navigate = useNavigate();
   const [mode, setMode] = useState<AuthMode>("login");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [formData, setFormData] = useState({ name: "", email: "", password: "", phone: "" });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
 
   useEffect(() => {
-    const session = localStorage.getItem(SESSION_KEY);
-    if (session) {
-      try {
-        const parsed = JSON.parse(session);
-        setUser(parsed);
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser({
+          name: session.user.user_metadata?.name || session.user.email?.split("@")[0] || "Usuário",
+          email: session.user.email || "",
+        });
         setIsLoggedIn(true);
-      } catch {}
-    }
+        // Check admin role
+        const { data } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id)
+          .eq("role", "admin")
+          .maybeSingle();
+        setIsAdmin(!!data);
+      }
+    };
+    checkSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        setUser({
+          name: session.user.user_metadata?.name || session.user.email?.split("@")[0] || "Usuário",
+          email: session.user.email || "",
+        });
+        setIsLoggedIn(true);
+        const { data } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id)
+          .eq("role", "admin")
+          .maybeSingle();
+        setIsAdmin(!!data);
+      } else {
+        setUser(null);
+        setIsLoggedIn(false);
+        setIsAdmin(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -56,55 +75,43 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
     }
   }, [isOpen, isLoggedIn]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
-    // Admin login check
-    if (mode === "login" && formData.email === "Admin" && formData.password === "Outsee@2026") {
-      localStorage.setItem(ADMIN_SESSION_KEY, "true");
-      onClose();
-      navigate("/admin");
-      return;
-    }
-
-    if (mode === "register") {
-      const users = getStoredUsers();
-      if (users.find((u) => u.email === formData.email)) {
-        setError("E-mail já cadastrado.");
-        return;
+    try {
+      if (mode === "register") {
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: { name: formData.name, phone: formData.phone },
+            emailRedirectTo: window.location.origin,
+          },
+        });
+        if (signUpError) throw signUpError;
+        toast.success("Conta criada! Verifique seu e-mail para confirmar.");
+      } else {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
+        if (signInError) throw signInError;
+        toast.success("Login realizado!");
       }
-      const newUser: UserData = {
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        phone: formData.phone,
-      };
-      localStorage.setItem(USERS_KEY, JSON.stringify([...users, newUser]));
-      const session = { name: newUser.name, email: newUser.email };
-      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-      setUser(session);
-      setIsLoggedIn(true);
-    } else {
-      const users = getStoredUsers();
-      const found = users.find(
-        (u) => u.email === formData.email && u.password === formData.password
-      );
-      if (!found) {
-        setError("E-mail ou senha incorretos.");
-        return;
-      }
-      const session = { name: found.name, email: found.email };
-      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-      setUser(session);
-      setIsLoggedIn(true);
+    } catch (err: any) {
+      setError(err.message || "Erro na autenticação.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem(SESSION_KEY);
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     setIsLoggedIn(false);
     setUser(null);
+    setIsAdmin(false);
     setFormData({ name: "", email: "", password: "", phone: "" });
   };
 
@@ -165,6 +172,11 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
                         <Mail className="h-3 w-3" />
                         {user.email}
                       </p>
+                      {isAdmin && (
+                        <span className="mt-1 inline-block bg-accent px-2 py-0.5 font-body text-[10px] font-bold uppercase tracking-wider text-accent-foreground">
+                          Admin
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -188,22 +200,25 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
                       </div>
                     </button>
 
+                    {isAdmin && (
+                      <button
+                        onClick={() => { onClose(); navigate("/admin"); }}
+                        className="flex w-full items-center justify-between px-6 py-4 transition-colors hover:bg-secondary"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Shield className="h-4 w-4 text-accent" />
+                          <span className="font-body text-sm font-semibold text-accent">Painel Admin</span>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      </button>
+                    )}
+
                     <button
                       className="flex w-full items-center justify-between px-6 py-4 transition-colors hover:bg-secondary"
                     >
                       <div className="flex items-center gap-3">
                         <User className="h-4 w-4 text-muted-foreground" />
                         <span className="font-body text-sm text-foreground">Dados Pessoais</span>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    </button>
-
-                    <button
-                      className="flex w-full items-center justify-between px-6 py-4 transition-colors hover:bg-secondary"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Shield className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-body text-sm text-foreground">Segurança</span>
                       </div>
                       <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     </button>
@@ -224,11 +239,7 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
                             <div className="flex items-center gap-3">
                               {order.items[0]?.image && (
                                 <div className="h-10 w-10 overflow-hidden bg-secondary">
-                                  <img
-                                    src={order.items[0].image}
-                                    alt=""
-                                    className="h-full w-full object-cover"
-                                  />
+                                  <img src={order.items[0].image} alt="" className="h-full w-full object-cover" />
                                 </div>
                               )}
                               <div>
@@ -302,14 +313,14 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
 
                     <div>
                       <label className="mb-2 block font-body text-xs uppercase tracking-widest text-muted-foreground">
-                        {mode === "login" ? "E-mail ou Usuário" : "E-mail"}
+                        E-mail
                       </label>
                       <input
-                        type={mode === "register" ? "email" : "text"}
+                        type="email"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         required
-                        placeholder={mode === "login" ? "seu@email.com" : "seu@email.com"}
+                        placeholder="seu@email.com"
                         className={inputClass}
                       />
                     </div>
@@ -331,8 +342,10 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
 
                     <button
                       type="submit"
-                      className="mt-2 w-full bg-foreground py-4 font-body text-xs uppercase tracking-widest text-background transition-opacity hover:opacity-80 active:scale-[0.98]"
+                      disabled={loading}
+                      className="mt-2 flex w-full items-center justify-center gap-2 bg-foreground py-4 font-body text-xs uppercase tracking-widest text-background transition-opacity hover:opacity-80 active:scale-[0.98] disabled:opacity-40"
                     >
+                      {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                       {mode === "login" ? "Entrar" : "Criar Conta"}
                     </button>
 
