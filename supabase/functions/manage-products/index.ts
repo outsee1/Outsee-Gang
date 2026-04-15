@@ -20,11 +20,11 @@ Deno.serve(async (req) => {
     const { action } = body;
 
     if (action === "create") {
-      const { name, description, price, tag, category, colors, sizes } = body;
+      const { name, description, price, tag, category, colors, sizes, image_url } = body;
 
       const { data: product, error } = await supabase
         .from("products")
-        .insert({ name, description, price, tag: tag || null, category })
+        .insert({ name, description, price, tag: tag || null, category, image_url: image_url || null })
         .select()
         .single();
 
@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
 
     if (action === "update") {
       const { productId, updates } = body;
-      const { sizes, ...productUpdates } = updates;
+      const { sizes, colors, ...productUpdates } = updates;
 
       if (Object.keys(productUpdates).length > 0) {
         const { error } = await supabase
@@ -73,6 +73,22 @@ Deno.serve(async (req) => {
             .from("product_sizes")
             .update({ available: s.available })
             .eq("id", s.id);
+        }
+      }
+
+      // Update color image_urls
+      if (colors) {
+        // Delete existing colors and re-insert
+        await supabase.from("product_colors").delete().eq("product_id", productId);
+        if (colors.length > 0) {
+          const colorRows = colors.map((c: any, i: number) => ({
+            product_id: productId,
+            name: c.name,
+            hex: c.hex,
+            image_url: c.image_url || null,
+            sort_order: i,
+          }));
+          await supabase.from("product_colors").insert(colorRows);
         }
       }
 
