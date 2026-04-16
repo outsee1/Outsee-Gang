@@ -194,6 +194,28 @@ const AdminProductModal = ({ isOpen, onClose, product }: AdminProductModalProps)
     }
   };
 
+  const [mainDragOver, setMainDragOver] = useState(false);
+  const [colorDragOver, setColorDragOver] = useState(false);
+
+  const handleMainDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setMainDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      setMainImageFile(file);
+      setMainImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleColorDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setColorDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      setNewColorFile(file);
+    }
+  };
+
   const loading = updateMutation.isPending || createMutation.isPending || deleteMutation.isPending || uploading;
 
   const inputClass =
