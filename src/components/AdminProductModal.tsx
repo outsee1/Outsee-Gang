@@ -194,6 +194,28 @@ const AdminProductModal = ({ isOpen, onClose, product }: AdminProductModalProps)
     }
   };
 
+  const [mainDragOver, setMainDragOver] = useState(false);
+  const [colorDragOver, setColorDragOver] = useState(false);
+
+  const handleMainDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setMainDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      setMainImageFile(file);
+      setMainImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleColorDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setColorDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      setNewColorFile(file);
+    }
+  };
+
   const loading = updateMutation.isPending || createMutation.isPending || deleteMutation.isPending || uploading;
 
   const inputClass =
@@ -226,19 +248,29 @@ const AdminProductModal = ({ isOpen, onClose, product }: AdminProductModalProps)
                 <label className="mb-2 block font-body text-xs uppercase tracking-widest text-muted-foreground">
                   Imagem Principal
                 </label>
-                <div className="flex items-center gap-4">
+                <div
+                  className={`relative flex items-center gap-4 border-2 border-dashed p-4 transition-colors ${
+                    mainDragOver ? "border-foreground bg-secondary" : "border-border"
+                  }`}
+                  onDragOver={(e) => { e.preventDefault(); setMainDragOver(true); }}
+                  onDragLeave={() => setMainDragOver(false)}
+                  onDrop={handleMainDrop}
+                >
                   {mainImagePreview ? (
                     <img src={mainImagePreview} alt="Preview" className="h-20 w-20 object-cover border border-border" />
                   ) : (
-                    <div className="flex h-20 w-20 items-center justify-center border border-dashed border-border bg-secondary">
+                    <div className="flex h-20 w-20 items-center justify-center border border-border bg-secondary">
                       <ImageIcon className="h-6 w-6 text-muted-foreground" />
                     </div>
                   )}
-                  <label className="flex cursor-pointer items-center gap-2 border border-border px-4 py-2 font-body text-xs uppercase tracking-widest text-foreground transition-colors hover:bg-foreground hover:text-background">
-                    <Upload className="h-4 w-4" />
-                    Upload
-                    <input type="file" accept="image/*" className="hidden" onChange={handleMainImageChange} />
-                  </label>
+                  <div className="flex flex-col gap-2">
+                    <label className="flex cursor-pointer items-center gap-2 border border-border px-4 py-2 font-body text-xs uppercase tracking-widest text-foreground transition-colors hover:bg-foreground hover:text-background">
+                      <Upload className="h-4 w-4" />
+                      Upload
+                      <input type="file" accept="image/*" className="hidden" onChange={handleMainImageChange} />
+                    </label>
+                    <span className="font-body text-[10px] text-muted-foreground">ou arraste uma imagem aqui</span>
+                  </div>
                 </div>
               </div>
 
@@ -343,7 +375,14 @@ const AdminProductModal = ({ isOpen, onClose, product }: AdminProductModalProps)
                       </button>
                     </div>
                   ))}
-                  <div className="space-y-2 border border-dashed border-border p-3">
+                  <div
+                    className={`space-y-2 border-2 border-dashed p-3 transition-colors ${
+                      colorDragOver ? "border-foreground bg-secondary" : "border-border"
+                    }`}
+                    onDragOver={(e) => { e.preventDefault(); setColorDragOver(true); }}
+                    onDragLeave={() => setColorDragOver(false)}
+                    onDrop={handleColorDrop}
+                  >
                     <div className="flex items-center gap-2">
                       <input type="color" value={newColorHex} onChange={(e) => setNewColorHex(e.target.value)} className="h-8 w-8 cursor-pointer border-0 p-0" />
                       <input value={newColorName} onChange={(e) => setNewColorName(e.target.value)} className={`${inputClass} flex-1`} placeholder="Nome da cor" />
@@ -351,7 +390,7 @@ const AdminProductModal = ({ isOpen, onClose, product }: AdminProductModalProps)
                     <div className="flex items-center gap-2">
                       <label className="flex flex-1 cursor-pointer items-center gap-2 border border-border px-3 py-2 font-body text-xs text-muted-foreground transition-colors hover:text-foreground">
                         <Upload className="h-3 w-3" />
-                        {newColorFile ? newColorFile.name : "Imagem da cor (opcional)"}
+                        {newColorFile ? newColorFile.name : "Arraste ou clique para imagem"}
                         <input type="file" accept="image/*" className="hidden" onChange={(e) => setNewColorFile(e.target.files?.[0] || null)} />
                       </label>
                       <button type="button" onClick={addColor}
