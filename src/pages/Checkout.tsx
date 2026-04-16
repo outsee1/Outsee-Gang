@@ -144,9 +144,17 @@ const Checkout = () => {
               </div>
               <button
                 onClick={handleFinalize}
-                className="mt-6 w-full bg-foreground py-4 font-body text-xs uppercase tracking-widest text-background transition-opacity hover:opacity-80"
+                disabled={loading}
+                className="mt-6 flex w-full items-center justify-center gap-2 bg-foreground py-4 font-body text-xs uppercase tracking-widest text-background transition-opacity hover:opacity-80 disabled:opacity-50"
               >
-                Finalizar pedido
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Processando...
+                  </>
+                ) : (
+                  "Finalizar pedido"
+                )}
               </button>
             </div>
           </div>
