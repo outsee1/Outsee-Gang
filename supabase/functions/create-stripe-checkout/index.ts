@@ -43,13 +43,18 @@ Deno.serve(async (req) => {
     });
 
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
+      payment_method_types: ['card', 'pix', 'boleto'],
       line_items: lineItems,
       mode: 'payment',
       success_url: successUrl || 'https://outsee.lovable.app/pedido-confirmado?id={CHECKOUT_SESSION_ID}',
       cancel_url: cancelUrl || 'https://outsee.lovable.app/',
       metadata: {
         order_id: orderId || '',
+      },
+      payment_method_options: {
+        boleto: {
+          expires_after_days: 3,
+        },
       },
     });
 
