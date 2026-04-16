@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Minus, Plus, X } from "lucide-react";
+import { ArrowLeft, Minus, Plus, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import ProfileModal from "@/components/ProfileModal";
 import CartSlidePanel from "@/components/CartSlidePanel";
 import { useCart } from "@/contexts/CartContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const Checkout = () => {
   const navigate = useNavigate();
