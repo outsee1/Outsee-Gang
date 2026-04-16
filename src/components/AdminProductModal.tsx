@@ -375,7 +375,14 @@ const AdminProductModal = ({ isOpen, onClose, product }: AdminProductModalProps)
                       </button>
                     </div>
                   ))}
-                  <div className="space-y-2 border border-dashed border-border p-3">
+                  <div
+                    className={`space-y-2 border-2 border-dashed p-3 transition-colors ${
+                      colorDragOver ? "border-foreground bg-secondary" : "border-border"
+                    }`}
+                    onDragOver={(e) => { e.preventDefault(); setColorDragOver(true); }}
+                    onDragLeave={() => setColorDragOver(false)}
+                    onDrop={handleColorDrop}
+                  >
                     <div className="flex items-center gap-2">
                       <input type="color" value={newColorHex} onChange={(e) => setNewColorHex(e.target.value)} className="h-8 w-8 cursor-pointer border-0 p-0" />
                       <input value={newColorName} onChange={(e) => setNewColorName(e.target.value)} className={`${inputClass} flex-1`} placeholder="Nome da cor" />
@@ -383,7 +390,7 @@ const AdminProductModal = ({ isOpen, onClose, product }: AdminProductModalProps)
                     <div className="flex items-center gap-2">
                       <label className="flex flex-1 cursor-pointer items-center gap-2 border border-border px-3 py-2 font-body text-xs text-muted-foreground transition-colors hover:text-foreground">
                         <Upload className="h-3 w-3" />
-                        {newColorFile ? newColorFile.name : "Imagem da cor (opcional)"}
+                        {newColorFile ? newColorFile.name : "Arraste ou clique para imagem"}
                         <input type="file" accept="image/*" className="hidden" onChange={(e) => setNewColorFile(e.target.files?.[0] || null)} />
                       </label>
                       <button type="button" onClick={addColor}
