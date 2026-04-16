@@ -248,19 +248,29 @@ const AdminProductModal = ({ isOpen, onClose, product }: AdminProductModalProps)
                 <label className="mb-2 block font-body text-xs uppercase tracking-widest text-muted-foreground">
                   Imagem Principal
                 </label>
-                <div className="flex items-center gap-4">
+                <div
+                  className={`relative flex items-center gap-4 border-2 border-dashed p-4 transition-colors ${
+                    mainDragOver ? "border-foreground bg-secondary" : "border-border"
+                  }`}
+                  onDragOver={(e) => { e.preventDefault(); setMainDragOver(true); }}
+                  onDragLeave={() => setMainDragOver(false)}
+                  onDrop={handleMainDrop}
+                >
                   {mainImagePreview ? (
                     <img src={mainImagePreview} alt="Preview" className="h-20 w-20 object-cover border border-border" />
                   ) : (
-                    <div className="flex h-20 w-20 items-center justify-center border border-dashed border-border bg-secondary">
+                    <div className="flex h-20 w-20 items-center justify-center border border-border bg-secondary">
                       <ImageIcon className="h-6 w-6 text-muted-foreground" />
                     </div>
                   )}
-                  <label className="flex cursor-pointer items-center gap-2 border border-border px-4 py-2 font-body text-xs uppercase tracking-widest text-foreground transition-colors hover:bg-foreground hover:text-background">
-                    <Upload className="h-4 w-4" />
-                    Upload
-                    <input type="file" accept="image/*" className="hidden" onChange={handleMainImageChange} />
-                  </label>
+                  <div className="flex flex-col gap-2">
+                    <label className="flex cursor-pointer items-center gap-2 border border-border px-4 py-2 font-body text-xs uppercase tracking-widest text-foreground transition-colors hover:bg-foreground hover:text-background">
+                      <Upload className="h-4 w-4" />
+                      Upload
+                      <input type="file" accept="image/*" className="hidden" onChange={handleMainImageChange} />
+                    </label>
+                    <span className="font-body text-[10px] text-muted-foreground">ou arraste uma imagem aqui</span>
+                  </div>
                 </div>
               </div>
 
