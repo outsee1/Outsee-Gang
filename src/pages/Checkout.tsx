@@ -13,10 +13,38 @@ const Checkout = () => {
   const [profileOpen, setProfileOpen] = useState(false);
   const { items, removeItem, updateQuantity, clearCart, totalPrice, cartOpen, setCartOpen } = useCart();
 
-  const handleFinalize = () => {
-    toast.success("Pedido realizado com sucesso!");
-    clearCart();
-    navigate("/");
+  const [loading, setLoading] = useState(false);
+
+  const handleFinalize = async () => {
+    setLoading(true);
+    try {
+      const stripeItems = items.map((item) => ({
+        name: item.name,
+        price: item.priceNum,
+        quantity: item.quantity,
+        image: item.image,
+      }));
+
+      const { data, error } = await supabase.functions.invoke("create-stripe-checkout", {
+        body: {
+          items: stripeItems,
+          successUrl: `${window.location.origin}/pedido-confirmado`,
+          cancelUrl: `${window.location.origin}/checkout`,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("URL de pagamento não retornada");
+      }
+    } catch (err: any) {
+      console.error("Stripe checkout error:", err);
+      toast.error("Erro ao iniciar pagamento. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
