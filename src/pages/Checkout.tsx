@@ -1,21 +1,50 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Minus, Plus, X } from "lucide-react";
+import { ArrowLeft, Minus, Plus, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import ProfileModal from "@/components/ProfileModal";
 import CartSlidePanel from "@/components/CartSlidePanel";
 import { useCart } from "@/contexts/CartContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const Checkout = () => {
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const { items, removeItem, updateQuantity, clearCart, totalPrice, cartOpen, setCartOpen } = useCart();
 
-  const handleFinalize = () => {
-    toast.success("Pedido realizado com sucesso!");
-    clearCart();
-    navigate("/");
+  const [loading, setLoading] = useState(false);
+
+  const handleFinalize = async () => {
+    setLoading(true);
+    try {
+      const stripeItems = items.map((item) => ({
+        name: item.name,
+        price: item.priceNum,
+        quantity: item.quantity,
+        image: item.image,
+      }));
+
+      const { data, error } = await supabase.functions.invoke("create-stripe-checkout", {
+        body: {
+          items: stripeItems,
+          successUrl: `${window.location.origin}/pedido-confirmado`,
+          cancelUrl: `${window.location.origin}/checkout`,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("URL de pagamento não retornada");
+      }
+    } catch (err: any) {
+      console.error("Stripe checkout error:", err);
+      toast.error("Erro ao iniciar pagamento. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -115,9 +144,17 @@ const Checkout = () => {
               </div>
               <button
                 onClick={handleFinalize}
-                className="mt-6 w-full bg-foreground py-4 font-body text-xs uppercase tracking-widest text-background transition-opacity hover:opacity-80"
+                disabled={loading}
+                className="mt-6 flex w-full items-center justify-center gap-2 bg-foreground py-4 font-body text-xs uppercase tracking-widest text-background transition-opacity hover:opacity-80 disabled:opacity-50"
               >
-                Finalizar pedido
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Processando...
+                  </>
+                ) : (
+                  "Finalizar pedido"
+                )}
               </button>
             </div>
           </div>
