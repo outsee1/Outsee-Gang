@@ -18,6 +18,22 @@ const Checkout = () => {
   const handleFinalize = async () => {
     setLoading(true);
     try {
+      // 1. Create order in DB first (status: pending)
+      const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          first_name: "Cliente",
+          last_name: "",
+          items: items as any,
+          total_price: totalPrice,
+          status: "pending",
+          payment_method: "Stripe",
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
       const stripeItems = items.map((item) => ({
         name: item.name,
         price: item.priceNum,
@@ -28,13 +44,22 @@ const Checkout = () => {
       const { data, error } = await supabase.functions.invoke("create-stripe-checkout", {
         body: {
           items: stripeItems,
-          successUrl: `${window.location.origin}/pedido-confirmado`,
-          cancelUrl: `${window.location.origin}/checkout`,
+          orderId: order.id,
+          successUrl: `${window.location.origin}/pedido-confirmado?id=${order.id}&session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: `${window.location.origin}/carrinho`,
         },
       });
 
       if (error) throw error;
       if (data?.url) {
+        // Save session_id to order so webhook can match
+        if (data.sessionId) {
+          await supabase
+            .from("orders")
+            .update({ stripe_session_id: data.sessionId })
+            .eq("id", order.id);
+        }
+        clearCart();
         window.location.href = data.url;
       } else {
         throw new Error("URL de pagamento não retornada");
