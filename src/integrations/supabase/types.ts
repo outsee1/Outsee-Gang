@@ -28,6 +28,7 @@ export type Database = {
           stripe_session_id: string | null
           total_price: number
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           address?: Json | null
@@ -42,6 +43,7 @@ export type Database = {
           stripe_session_id?: string | null
           total_price: number
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           address?: Json | null
@@ -56,6 +58,7 @@ export type Database = {
           stripe_session_id?: string | null
           total_price?: number
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }

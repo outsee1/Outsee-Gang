@@ -18,6 +18,8 @@ const Checkout = () => {
   const handleFinalize = async () => {
     setLoading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+
       // 1. Create order in DB first (status: pending)
       const { data: order, error: orderError } = await supabase
         .from("orders")
@@ -28,6 +30,7 @@ const Checkout = () => {
           total_price: totalPrice,
           status: "pending",
           payment_method: "Stripe",
+          user_id: user?.id ?? null,
         })
         .select()
         .single();
@@ -35,10 +38,8 @@ const Checkout = () => {
       if (orderError) throw orderError;
 
       const stripeItems = items.map((item) => ({
-        name: item.name,
-        price: item.priceNum,
+        productId: item.productId,
         quantity: item.quantity,
-        image: item.image,
       }));
 
       const { data, error } = await supabase.functions.invoke("create-stripe-checkout", {
