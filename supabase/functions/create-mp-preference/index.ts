@@ -66,7 +66,14 @@ Deno.serve(async (req) => {
       }
     })
 
-    const origin = req.headers.get('origin') || 'https://outsee.lovable.app'
+    const ALLOWED_ORIGINS = [
+      'https://outsee.lovable.app',
+      'https://id-preview--ea8aad58-c070-491e-be9e-0710771201cd.lovable.app',
+    ]
+    const reqOrigin = req.headers.get('origin')
+    const origin = reqOrigin && ALLOWED_ORIGINS.includes(reqOrigin)
+      ? reqOrigin
+      : ALLOWED_ORIGINS[0]
 
     const preference = {
       items: mpItems,
