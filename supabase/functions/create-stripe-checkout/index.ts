@@ -21,6 +21,21 @@ Deno.serve(async (req) => {
 
     const { items, orderId, successUrl, cancelUrl } = await req.json();
 
+    // Allowlist origins to prevent open-redirect via successUrl/cancelUrl
+    const ALLOWED_ORIGINS = [
+      'https://outsee.lovable.app',
+      'https://id-preview--ea8aad58-c070-491e-be9e-0710771201cd.lovable.app',
+    ];
+    const isAllowedUrl = (u: unknown): u is string => {
+      if (!u || typeof u !== 'string') return false;
+      try {
+        const parsed = new URL(u);
+        return ALLOWED_ORIGINS.includes(parsed.origin);
+      } catch { return false; }
+    };
+    const safeSuccessUrl = isAllowedUrl(successUrl) ? successUrl : `${ALLOWED_ORIGINS[0]}/pedido-confirmado?id=${orderId || ''}&session_id={CHECKOUT_SESSION_ID}`;
+    const safeCancelUrl = isAllowedUrl(cancelUrl) ? cancelUrl : `${ALLOWED_ORIGINS[0]}/carrinho`;
+
     if (!items || !Array.isArray(items) || items.length === 0) {
       return new Response(JSON.stringify({ error: 'Items are required' }), {
         status: 400,
@@ -82,8 +97,8 @@ Deno.serve(async (req) => {
       payment_method_types: ['card', 'pix', 'boleto'],
       line_items: lineItems,
       mode: 'payment',
-      success_url: successUrl || 'https://outsee.lovable.app/pedido-confirmado?id={CHECKOUT_SESSION_ID}',
-      cancel_url: cancelUrl || 'https://outsee.lovable.app/',
+      success_url: safeSuccessUrl,
+      cancel_url: safeCancelUrl,
       metadata: {
         order_id: orderId || '',
       },
