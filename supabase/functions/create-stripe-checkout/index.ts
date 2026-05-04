@@ -1,4 +1,5 @@
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -27,18 +28,53 @@ Deno.serve(async (req) => {
       });
     }
 
-    const lineItems = items.map((item: { name: string; price: number; quantity: number; image?: string }) => {
-      const isValidUrl = item.image && (item.image.startsWith('http://') || item.image.startsWith('https://'));
+    // Validate items shape
+    type IncomingItem = { productId?: string; quantity?: number };
+    const cleanItems: { productId: string; quantity: number }[] = [];
+    for (const it of items as IncomingItem[]) {
+      if (!it?.productId || typeof it.productId !== 'string') {
+        return new Response(JSON.stringify({ error: 'productId required for each item' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const q = Math.floor(Number(it.quantity || 0));
+      if (!q || q < 1 || q > 100) {
+        return new Response(JSON.stringify({ error: 'invalid quantity' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      cleanItems.push({ productId: it.productId, quantity: q });
+    }
+
+    // Fetch authoritative product data from DB (service role bypasses RLS for read)
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+    const ids = cleanItems.map(i => i.productId);
+    const { data: products, error: prodErr } = await supabase
+      .from('products')
+      .select('id, name, price, image_url')
+      .in('id', ids);
+    if (prodErr || !products || products.length !== ids.length) {
+      return new Response(JSON.stringify({ error: 'Invalid product(s)' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const lineItems = cleanItems.map((it) => {
+      const p = products.find((pp: any) => pp.id === it.productId)!;
+      const isValidUrl = p.image_url && (String(p.image_url).startsWith('http://') || String(p.image_url).startsWith('https://'));
       return {
         price_data: {
           currency: 'brl',
           product_data: {
-            name: item.name,
-            ...(isValidUrl ? { images: [item.image] } : {}),
+            name: p.name,
+            ...(isValidUrl ? { images: [p.image_url] } : {}),
           },
-          unit_amount: Math.round(item.price * 100),
+          unit_amount: Math.round(Number(p.price) * 100),
         },
-        quantity: item.quantity,
+        quantity: it.quantity,
       };
     });
 
