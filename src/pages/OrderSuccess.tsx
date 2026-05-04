@@ -32,13 +32,17 @@ const OrderSuccess = () => {
     }
 
     const fetchOrder = async () => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("id", orderId)
-        .maybeSingle();
-
-      if (!error && data) setOrder(data);
+      const { data, error } = await supabase.functions.invoke("get-order-status", {
+        body: undefined,
+        method: "GET" as any,
+      } as any);
+      // fallback to direct GET to handle query param
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-order-status?id=${encodeURIComponent(orderId)}`,
+        { headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY } }
+      );
+      const json = await res.json().catch(() => ({}));
+      if (json?.order) setOrder(json.order);
       setLoading(false);
     };
 
@@ -46,14 +50,14 @@ const OrderSuccess = () => {
 
     // Poll every 3s for up to ~30s in case webhook hasn't arrived yet
     const interval = setInterval(async () => {
-      const { data } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("id", orderId)
-        .maybeSingle();
-      if (data) {
-        setOrder(data);
-        if (data.status === "paid" || data.status === "failed") {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-order-status?id=${encodeURIComponent(orderId)}`,
+        { headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY } }
+      );
+      const json = await res.json().catch(() => ({}));
+      if (json?.order) {
+        setOrder(json.order);
+        if (json.order.status === "paid" || json.order.status === "failed") {
           clearInterval(interval);
         }
       }
