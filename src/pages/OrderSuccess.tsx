@@ -32,11 +32,6 @@ const OrderSuccess = () => {
     }
 
     const fetchOrder = async () => {
-      const { data, error } = await supabase.functions.invoke("get-order-status", {
-        body: undefined,
-        method: "GET" as any,
-      } as any);
-      // fallback to direct GET to handle query param
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-order-status?id=${encodeURIComponent(orderId)}`,
         { headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY } }
