@@ -1,14 +1,11 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface CartItem {
-  name: string;
-  price: number;
-  quantity: number;
-  image?: string;
-}
+interface IncomingItem { productId?: string; quantity?: number }
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -30,12 +27,44 @@ Deno.serve(async (req) => {
       })
     }
 
-    const mpItems = items.map((item: CartItem) => ({
-      title: item.name,
-      quantity: item.quantity,
-      unit_price: item.price,
-      currency_id: 'BRL',
-    }))
+    const cleanItems: { productId: string; quantity: number }[] = []
+    for (const it of items as IncomingItem[]) {
+      if (!it?.productId || typeof it.productId !== 'string') {
+        return new Response(JSON.stringify({ error: 'productId required for each item' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      const q = Math.floor(Number(it.quantity || 0))
+      if (!q || q < 1 || q > 100) {
+        return new Response(JSON.stringify({ error: 'invalid quantity' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      cleanItems.push({ productId: it.productId, quantity: q })
+    }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+    const ids = cleanItems.map(i => i.productId)
+    const { data: products, error: prodErr } = await supabase
+      .from('products').select('id, name, price').in('id', ids)
+    if (prodErr || !products || products.length !== ids.length) {
+      return new Response(JSON.stringify({ error: 'Invalid product(s)' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const mpItems = cleanItems.map((it) => {
+      const p = products.find((pp: any) => pp.id === it.productId)!
+      return {
+        title: p.name,
+        quantity: it.quantity,
+        unit_price: Number(p.price),
+        currency_id: 'BRL',
+      }
+    })
 
     const origin = req.headers.get('origin') || 'https://outsee.lovable.app'
 
