@@ -16,6 +16,21 @@ const d = hasDb ? describe : describe.skip;
 const psql = (sql: string) =>
   execSync(`psql -tAc ${JSON.stringify(sql)}`, { encoding: "utf8" }).trim();
 
+/** Run an INSERT inside a transaction that we ROLLBACK so test data does not persist. */
+const insertAndRollback = (sql: string): string => {
+  const wrapped = `BEGIN;\n${sql};\nROLLBACK;`;
+  const out = execSync(`psql -tA <<'PSQL_EOF'\n${wrapped}\nPSQL_EOF`, {
+    encoding: "utf8",
+    shell: "/bin/bash",
+  });
+  // psql echoes BEGIN / ROLLBACK lines too; pull the last non-empty line that isn't a status keyword.
+  const lines = out.split("\n").map((l) => l.trim()).filter(Boolean);
+  const data = lines.find(
+    (l) => l !== "BEGIN" && l !== "ROLLBACK" && !l.startsWith("INSERT ")
+  );
+  return data ?? "";
+};
+
 d("orders.total_price server-side recompute", () => {
   it("ignores client-supplied total and recomputes from products.price * quantity", () => {
     const product = psql(
@@ -28,7 +43,7 @@ d("orders.total_price server-side recompute", () => {
     const expected = unitPrice * quantity;
 
     const items = JSON.stringify([{ productId, quantity }]).replace(/'/g, "''");
-    const inserted = psql(
+    const inserted = insertAndRollback(
       `INSERT INTO orders (first_name, items, total_price, payment_method, status)
        VALUES ('VITEST_TRIGGER', '${items}'::jsonb, 99999.99, 'Stripe', 'pending')
        RETURNING total_price`
@@ -41,7 +56,7 @@ d("orders.total_price server-side recompute", () => {
   it("recomputes to 0 when items reference unknown products", () => {
     const fakeId = "00000000-0000-0000-0000-000000000000";
     const items = JSON.stringify([{ productId: fakeId, quantity: 5 }]).replace(/'/g, "''");
-    const inserted = psql(
+    const inserted = insertAndRollback(
       `INSERT INTO orders (first_name, items, total_price, payment_method, status)
        VALUES ('VITEST_TRIGGER', '${items}'::jsonb, 5000, 'Stripe', 'pending')
        RETURNING total_price`
