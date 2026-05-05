@@ -130,6 +130,16 @@ Deno.serve(async (req) => {
       throw new Error(`Mercado Pago API error [${response.status}]: ${JSON.stringify(data)}`)
     }
 
+    // Audit log (best-effort)
+    try {
+      await supabase.from('audit_logs').insert({
+        function_name: 'create-mp-preference',
+        user_id: callerUserId,
+        ip: callerIp,
+        metadata: { order_id: orderId ?? null, preference_id: data.id, item_count: cleanItems.length },
+      })
+    } catch (e) { console.error('audit log failed', e) }
+
     return new Response(JSON.stringify({
       id: data.id,
       init_point: data.init_point,
