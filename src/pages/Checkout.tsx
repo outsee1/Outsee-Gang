@@ -21,8 +21,8 @@ const Checkout = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast.error("Faça login para finalizar a compra.");
-        setProfileOpen(true);
         setLoading(false);
+        navigate("/auth?redirect=/carrinho");
         return;
       }
 

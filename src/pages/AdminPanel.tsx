@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Package, TrendingUp, Users, Loader2 } from "lucide-react";
+import { ArrowLeft, Package, TrendingUp, Users, Loader2, Shield } from "lucide-react";
 import Header from "@/components/Header";
 import ProfileModal from "@/components/ProfileModal";
 import CartSlidePanel from "@/components/CartSlidePanel";
@@ -98,6 +98,15 @@ const AdminPanel = () => {
             className="border border-border px-6 py-2 font-body text-xs uppercase tracking-widest text-muted-foreground hover:border-accent hover:text-accent"
           >
             Sair do Admin
+          </button>
+        </div>
+
+        <div className="mb-6">
+          <button
+            onClick={() => navigate("/admin/audit-logs")}
+            className="inline-flex items-center gap-2 border border-border px-4 py-2 font-body text-xs uppercase tracking-widest text-foreground transition-colors hover:bg-secondary"
+          >
+            <Shield className="h-4 w-4 text-accent" /> Logs de auditoria
           </button>
         </div>
 

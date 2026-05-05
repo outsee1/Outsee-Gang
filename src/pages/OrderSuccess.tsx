@@ -52,7 +52,7 @@ const OrderSuccess = () => {
       const json = await res.json().catch(() => ({}));
       if (json?.order) {
         setOrder(json.order);
-        if (json.order.status === "paid" || json.order.status === "failed") {
+        if (["paid", "failed", "canceled"].includes(json.order.status)) {
           clearInterval(interval);
         }
       }
@@ -67,7 +67,7 @@ const OrderSuccess = () => {
 
   const StatusIcon = () => {
     if (status === "paid") return <CheckCircle className="mb-6 h-16 w-16 text-[hsl(142,70%,40%)]" />;
-    if (status === "failed") return <XCircle className="mb-6 h-16 w-16 text-destructive" />;
+    if (status === "failed" || status === "canceled") return <XCircle className="mb-6 h-16 w-16 text-destructive" />;
     return <Clock className="mb-6 h-16 w-16 text-muted-foreground" />;
   };
 
@@ -76,14 +76,18 @@ const OrderSuccess = () => {
       ? "Pedido Confirmado"
       : status === "failed"
         ? "Pagamento Falhou"
-        : "Aguardando Pagamento";
+        : status === "canceled"
+          ? "Pedido Cancelado"
+          : "Aguardando Pagamento";
 
   const statusMessage =
     status === "paid"
       ? "Seu pedido foi confirmado! Você receberá atualizações sobre o envio."
       : status === "failed"
         ? "Houve um problema no pagamento. Tente novamente."
-        : "Estamos aguardando a confirmação do seu pagamento (Pix/Boleto podem levar alguns minutos).";
+        : status === "canceled"
+          ? "Este pedido foi cancelado."
+          : "Estamos aguardando a confirmação do seu pagamento (Pix/Boleto podem levar alguns minutos).";
 
   return (
     <div className="min-h-screen bg-background">
