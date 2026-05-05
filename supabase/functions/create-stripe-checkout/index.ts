@@ -132,6 +132,16 @@ Deno.serve(async (req) => {
       },
     });
 
+    // Audit log (best-effort)
+    try {
+      await supabase.from('audit_logs').insert({
+        function_name: 'create-stripe-checkout',
+        user_id: callerUserId,
+        ip: callerIp,
+        metadata: { order_id: orderId ?? null, session_id: session.id, item_count: cleanItems.length },
+      });
+    } catch (e) { console.error('audit log failed', e); }
+
     return new Response(JSON.stringify({ url: session.url, sessionId: session.id }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
