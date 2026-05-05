@@ -18,6 +18,29 @@ Deno.serve(async (req) => {
       throw new Error('MERCADOPAGO_ACCESS_TOKEN is not configured')
     }
 
+    // ---- Require authentication ----
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    const userClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    )
+    const { data: userData, error: userErr } = await userClient.auth.getUser()
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    const callerUserId = userData.user.id
+    const callerIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || req.headers.get('cf-connecting-ip')
+      || null
+
     const { items, payer, orderId } = await req.json()
 
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -106,6 +129,16 @@ Deno.serve(async (req) => {
       console.error('Mercado Pago error:', data)
       throw new Error(`Mercado Pago API error [${response.status}]: ${JSON.stringify(data)}`)
     }
+
+    // Audit log (best-effort)
+    try {
+      await supabase.from('audit_logs').insert({
+        function_name: 'create-mp-preference',
+        user_id: callerUserId,
+        ip: callerIp,
+        metadata: { order_id: orderId ?? null, preference_id: data.id, item_count: cleanItems.length },
+      })
+    } catch (e) { console.error('audit log failed', e) }
 
     return new Response(JSON.stringify({
       id: data.id,

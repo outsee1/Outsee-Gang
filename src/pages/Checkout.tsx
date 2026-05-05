@@ -19,6 +19,12 @@ const Checkout = () => {
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Faça login para finalizar a compra.");
+        setProfileOpen(true);
+        setLoading(false);
+        return;
+      }
 
       // 1. Create order in DB first (status: pending)
       const { data: order, error: orderError } = await supabase
@@ -30,7 +36,7 @@ const Checkout = () => {
           total_price: totalPrice,
           status: "pending",
           payment_method: "Stripe",
-          user_id: user?.id ?? null,
+          user_id: user.id,
         })
         .select()
         .single();

@@ -19,6 +19,29 @@ Deno.serve(async (req) => {
 
     const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' });
 
+    // ---- Require authentication ----
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const userClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const callerUserId = userData.user.id;
+    const callerIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || req.headers.get('cf-connecting-ip')
+      || null;
+
     const { items, orderId, successUrl, cancelUrl } = await req.json();
 
     // Allowlist origins to prevent open-redirect via successUrl/cancelUrl
@@ -108,6 +131,16 @@ Deno.serve(async (req) => {
         },
       },
     });
+
+    // Audit log (best-effort)
+    try {
+      await supabase.from('audit_logs').insert({
+        function_name: 'create-stripe-checkout',
+        user_id: callerUserId,
+        ip: callerIp,
+        metadata: { order_id: orderId ?? null, session_id: session.id, item_count: cleanItems.length },
+      });
+    } catch (e) { console.error('audit log failed', e); }
 
     return new Response(JSON.stringify({ url: session.url, sessionId: session.id }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
