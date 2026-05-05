@@ -52,7 +52,7 @@ const OrderSuccess = () => {
       const json = await res.json().catch(() => ({}));
       if (json?.order) {
         setOrder(json.order);
-        if (json.order.status === "paid" || json.order.status === "failed") {
+        if (["paid", "failed", "canceled"].includes(json.order.status)) {
           clearInterval(interval);
         }
       }
