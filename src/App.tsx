@@ -13,6 +13,9 @@ import Checkout from "./pages/Checkout.tsx";
 import OrderSuccess from "./pages/OrderSuccess.tsx";
 import MyOrders from "./pages/MyOrders.tsx";
 import AdminPanel from "./pages/AdminPanel.tsx";
+import AdminAuditLogs from "./pages/AdminAuditLogs.tsx";
+import Auth from "./pages/Auth.tsx";
+import Profile from "./pages/Profile.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -26,7 +29,10 @@ const AnimatedRoutes = () => {
         <Route path="/carrinho" element={<PageTransition><Checkout /></PageTransition>} />
         <Route path="/pedido-confirmado" element={<PageTransition><OrderSuccess /></PageTransition>} />
         <Route path="/meus-pedidos" element={<PageTransition><MyOrders /></PageTransition>} />
+        <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
+        <Route path="/perfil" element={<PageTransition><Profile /></PageTransition>} />
         <Route path="/admin" element={<PageTransition><AdminPanel /></PageTransition>} />
+        <Route path="/admin/audit-logs" element={<PageTransition><AdminAuditLogs /></PageTransition>} />
         <Route path="/" element={<PageTransition><Index /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
