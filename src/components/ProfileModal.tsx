@@ -214,11 +214,12 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
                     )}
 
                     <button
+                      onClick={() => { onClose(); navigate("/perfil"); }}
                       className="flex w-full items-center justify-between px-6 py-4 transition-colors hover:bg-secondary"
                     >
                       <div className="flex items-center gap-3">
                         <User className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-body text-sm text-foreground">Dados Pessoais</span>
+                        <span className="font-body text-sm text-foreground">Meu perfil</span>
                       </div>
                       <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     </button>
