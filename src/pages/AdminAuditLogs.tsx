@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Loader2, Shield, Download, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
@@ -69,8 +69,8 @@ const AdminAuditLogs = () => {
       q = q.lte("created_at", end.toISOString());
     }
     if (debouncedSearch) {
-      const s = debouncedSearch.replace(/[%_,]/g, "");
-      q = q.or(`function_name.ilike.%${s}%,ip.ilike.%${s}%,metadata::text.ilike.%${s}%`);
+      const s = debouncedSearch.replace(/[%_,()]/g, "");
+      q = q.or(`function_name.ilike.%${s}%,ip.ilike.%${s}%`);
     }
     return q;
   };
