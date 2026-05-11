@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, User, ShoppingBag, X, Loader2 } from "lucide-react";
+import { Search, User, ShoppingBag, X, Loader2, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useProducts } from "@/hooks/useProducts";
@@ -50,6 +50,17 @@ const Header = ({ onProfileClick }: HeaderProps) => {
     navigate(`/produto/${id}`);
   };
 
+  const goToResults = () => {
+    const q = query.trim();
+    setSearchOpen(false);
+    setQuery("");
+    navigate(q ? `/buscar?q=${encodeURIComponent(q)}` : "/buscar");
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") goToResults();
+  };
+
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-sm">
       <div className="container flex h-16 items-center justify-between gap-4">
@@ -66,6 +77,7 @@ const Header = ({ onProfileClick }: HeaderProps) => {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={onKeyDown}
                 placeholder="Buscar peças..."
                 autoFocus
                 className="w-full bg-transparent py-2 font-body text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
@@ -75,18 +87,27 @@ const Header = ({ onProfileClick }: HeaderProps) => {
               </button>
               </div>
 
-              {debounced && (
+              {(query.trim() || debounced) && (
                 <div className="absolute left-0 right-0 top-full z-40 mt-1 max-h-96 overflow-y-auto border border-border bg-card shadow-lg">
-                  {isLoading ? (
+                  {isLoading || query.trim() !== debounced ? (
                     <div className="flex items-center justify-center gap-2 p-4 font-body text-xs text-muted-foreground">
                       <Loader2 className="h-3 w-3 animate-spin" /> Buscando...
                     </div>
                   ) : results.length === 0 ? (
-                    <div className="p-4 text-center font-body text-xs text-muted-foreground">
-                      Nenhum produto encontrado para "{debounced}".
-                    </div>
+                    <>
+                      <div className="p-4 text-center font-body text-xs text-muted-foreground">
+                        Nenhum produto encontrado para "{debounced}".
+                      </div>
+                      <button
+                        onClick={goToResults}
+                        className="flex w-full items-center justify-center gap-2 border-t border-border bg-secondary p-3 font-body text-[11px] uppercase tracking-widest text-foreground transition-colors hover:bg-foreground hover:text-background"
+                      >
+                        Ver página de busca <ArrowRight className="h-3 w-3" />
+                      </button>
+                    </>
                   ) : (
-                    results.map((p) => (
+                    <>
+                      {results.map((p) => (
                       <button
                         key={p.id}
                         onClick={() => goToProduct(p.id)}
@@ -107,7 +128,14 @@ const Header = ({ onProfileClick }: HeaderProps) => {
                           R$ {p.price.toLocaleString("pt-BR")}
                         </span>
                       </button>
-                    ))
+                      ))}
+                      <button
+                        onClick={goToResults}
+                        className="flex w-full items-center justify-center gap-2 border-t border-border bg-secondary p-3 font-body text-[11px] uppercase tracking-widest text-foreground transition-colors hover:bg-foreground hover:text-background"
+                      >
+                        Ver todos os resultados <ArrowRight className="h-3 w-3" />
+                      </button>
+                    </>
                   )}
                 </div>
               )}

@@ -11,11 +11,13 @@ import Index from "./pages/Index.tsx";
 import ProductDetail from "./pages/ProductDetail.tsx";
 import Checkout from "./pages/Checkout.tsx";
 import OrderSuccess from "./pages/OrderSuccess.tsx";
+import OrderStatus from "./pages/OrderStatus.tsx";
 import MyOrders from "./pages/MyOrders.tsx";
 import AdminPanel from "./pages/AdminPanel.tsx";
 import AdminAuditLogs from "./pages/AdminAuditLogs.tsx";
 import Auth from "./pages/Auth.tsx";
 import Profile from "./pages/Profile.tsx";
+import SearchResults from "./pages/SearchResults.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -28,7 +30,9 @@ const AnimatedRoutes = () => {
         <Route path="/produto/:id" element={<PageTransition><ProductDetail /></PageTransition>} />
         <Route path="/carrinho" element={<PageTransition><Checkout /></PageTransition>} />
         <Route path="/pedido-confirmado" element={<PageTransition><OrderSuccess /></PageTransition>} />
+        <Route path="/pedido/:id" element={<PageTransition><OrderStatus /></PageTransition>} />
         <Route path="/meus-pedidos" element={<PageTransition><MyOrders /></PageTransition>} />
+        <Route path="/buscar" element={<PageTransition><SearchResults /></PageTransition>} />
         <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
         <Route path="/perfil" element={<PageTransition><Profile /></PageTransition>} />
         <Route path="/admin" element={<PageTransition><AdminPanel /></PageTransition>} />
