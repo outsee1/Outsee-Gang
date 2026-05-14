@@ -15,6 +15,7 @@ import OrderStatus from "./pages/OrderStatus.tsx";
 import MyOrders from "./pages/MyOrders.tsx";
 import AdminPanel from "./pages/AdminPanel.tsx";
 import AdminAuditLogs from "./pages/AdminAuditLogs.tsx";
+import AdminUsers from "./pages/AdminUsers.tsx";
 import Auth from "./pages/Auth.tsx";
 import Profile from "./pages/Profile.tsx";
 import SearchResults from "./pages/SearchResults.tsx";
@@ -37,6 +38,7 @@ const AnimatedRoutes = () => {
         <Route path="/perfil" element={<PageTransition><Profile /></PageTransition>} />
         <Route path="/admin" element={<PageTransition><AdminPanel /></PageTransition>} />
         <Route path="/admin/audit-logs" element={<PageTransition><AdminAuditLogs /></PageTransition>} />
+        <Route path="/admin/usuarios" element={<PageTransition><AdminUsers /></PageTransition>} />
         <Route path="/" element={<PageTransition><Index /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
