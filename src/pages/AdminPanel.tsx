@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Package, TrendingUp, Users, Loader2, Shield } from "lucide-react";
+import { ArrowLeft, Package, TrendingUp, Users, Loader2, Shield, UserCog } from "lucide-react";
 import Header from "@/components/Header";
 import ProfileModal from "@/components/ProfileModal";
 import CartSlidePanel from "@/components/CartSlidePanel";
@@ -23,14 +23,14 @@ const AdminPanel = () => {
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const { cartOpen, setCartOpen } = useCart();
-  const { isAdmin, loading: authLoading, logout } = useAdminAuth();
+  const { isAdmin, loading: authLoading, userId, logout } = useAdminAuth();
   const [orders, setOrders] = useState<DBOrder[]>([]);
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
-      navigate("/");
+      navigate(userId ? "/" : "/auth?redirect=/admin", { replace: true });
     }
-  }, [authLoading, isAdmin, navigate]);
+  }, [authLoading, isAdmin, userId, navigate]);
 
   useEffect(() => {
     if (isAdmin) fetchOrders();
@@ -101,12 +101,18 @@ const AdminPanel = () => {
           </button>
         </div>
 
-        <div className="mb-6">
+        <div className="mb-6 flex flex-wrap gap-3">
           <button
             onClick={() => navigate("/admin/audit-logs")}
             className="inline-flex items-center gap-2 border border-border px-4 py-2 font-body text-xs uppercase tracking-widest text-foreground transition-colors hover:bg-secondary"
           >
             <Shield className="h-4 w-4 text-accent" /> Logs de auditoria
+          </button>
+          <button
+            onClick={() => navigate("/admin/usuarios")}
+            className="inline-flex items-center gap-2 border border-border px-4 py-2 font-body text-xs uppercase tracking-widest text-foreground transition-colors hover:bg-secondary"
+          >
+            <UserCog className="h-4 w-4 text-accent" /> Usuários admin
           </button>
         </div>
 

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Pencil, Plus, GripVertical } from "lucide-react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { useProducts, Product } from "@/hooks/useProducts";
-import { isAdminActive } from "@/hooks/useAdmin";
+import { useAdminAuth } from "@/hooks/useAdmin";
 import AdminProductModal from "@/components/AdminProductModal";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -11,7 +11,7 @@ import { toast } from "sonner";
 const ProductGrid = () => {
   const navigate = useNavigate();
   const { data: products = [], isLoading } = useProducts();
-  const admin = isAdminActive();
+  const { isAdmin: admin } = useAdminAuth();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
