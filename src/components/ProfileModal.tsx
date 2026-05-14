@@ -33,14 +33,11 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
           email: session.user.email || "",
         });
         setIsLoggedIn(true);
-        // Check admin role
-        const { data } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", session.user.id)
-          .eq("role", "admin")
-          .maybeSingle();
-        setIsAdmin(!!data);
+        const { data, error } = await supabase.rpc("has_role", {
+          _user_id: session.user.id,
+          _role: "admin",
+        });
+        setIsAdmin(!error && data === true);
       }
     };
     checkSession();
@@ -52,13 +49,11 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
           email: session.user.email || "",
         });
         setIsLoggedIn(true);
-        const { data } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", session.user.id)
-          .eq("role", "admin")
-          .maybeSingle();
-        setIsAdmin(!!data);
+        const { data, error } = await supabase.rpc("has_role", {
+          _user_id: session.user.id,
+          _role: "admin",
+        });
+        setIsAdmin(!error && data === true);
       } else {
         setUser(null);
         setIsLoggedIn(false);
