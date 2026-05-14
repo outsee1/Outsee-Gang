@@ -97,6 +97,7 @@ export function useAdminCreateProduct() {
       price: number;
       tag?: string;
       category: string;
+      image_url?: string;
       colors: { name: string; hex: string }[];
       sizes: { size: string; available: boolean }[];
     }) => {
