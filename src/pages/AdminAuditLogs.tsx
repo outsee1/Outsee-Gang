@@ -24,7 +24,7 @@ const PAGE_SIZE = 50;
 
 const AdminAuditLogs = () => {
   const navigate = useNavigate();
-  const { isAdmin, loading: authLoading } = useAdminAuth();
+  const { isAdmin, loading: authLoading, userId } = useAdminAuth();
   const [profileOpen, setProfileOpen] = useState(false);
   const { cartOpen, setCartOpen } = useCart();
 
@@ -78,7 +78,7 @@ const AdminAuditLogs = () => {
   useEffect(() => {
     if (authLoading) return;
     if (!isAdmin) {
-      navigate("/", { replace: true });
+      navigate(userId ? "/" : "/auth?redirect=/admin/audit-logs", { replace: true });
       return;
     }
     const load = async () => {
@@ -96,7 +96,7 @@ const AdminAuditLogs = () => {
       setLoading(false);
     };
     load();
-  }, [authLoading, isAdmin, navigate, page, fnFilter, debouncedUser, from, to, debouncedSearch]);
+  }, [authLoading, isAdmin, userId, navigate, page, fnFilter, debouncedUser, from, to, debouncedSearch]);
 
   // Load distinct function names (one-shot)
   useEffect(() => {
