@@ -252,6 +252,27 @@ const AdminUsers = () => {
         </div>
       </main>
 
+      <AlertDialog open={!!pendingChange} onOpenChange={(open) => !open && setPendingChange(null)}>
+        <AlertDialogContent className="rounded-none border-border bg-background">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 font-display uppercase tracking-wider text-foreground">
+              <ShieldAlert className="h-5 w-5 text-accent" /> Confirmar permissão
+            </AlertDialogTitle>
+            <AlertDialogDescription className="font-body text-sm text-muted-foreground">
+              {pendingChange?.next
+                ? `Ativar permissão admin para ${pendingChange.user.email || pendingChange.user.id}?`
+                : `Remover permissão admin de ${pendingChange?.user.email || pendingChange?.user.id}?`} Esta ação será registrada nos logs de auditoria.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-none">Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmAdminChange} className="rounded-none bg-accent text-accent-foreground hover:bg-accent/90">
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <ProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
       <CartSlidePanel isOpen={cartOpen} onClose={() => setCartOpen(false)} />
     </div>
