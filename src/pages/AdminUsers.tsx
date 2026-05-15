@@ -75,8 +75,11 @@ const AdminUsers = () => {
 
   useEffect(() => {
     if (authLoading) return;
+    if (!userId) {
+      navigate("/auth?redirect=/admin/usuarios", { replace: true });
+      return;
+    }
     if (!isAdmin) {
-      navigate(userId ? "/" : "/auth?redirect=/admin/usuarios", { replace: true });
       return;
     }
     loadUsers();
@@ -125,7 +128,20 @@ const AdminUsers = () => {
     );
   }
 
-  if (!isAdmin) return null;
+  if (!isAdmin) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="max-w-md border border-border p-6 text-center">
+          <ShieldAlert className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+          <h1 className="font-display text-xl font-bold uppercase tracking-wider text-foreground">Sem permissão admin</h1>
+          <p className="mt-2 font-body text-sm text-muted-foreground">Seu usuário está autenticado, mas ainda não possui permissão admin.</p>
+          <button onClick={() => navigate("/")} className="mt-5 border border-border px-5 py-2 font-body text-xs uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background">
+            Voltar para a loja
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
