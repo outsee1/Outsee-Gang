@@ -19,11 +19,10 @@ export function useAdminAuth() {
 
     setUserId(sessionUserId);
     setEmail(sessionEmail ?? null);
-    const { data, error } = await supabase.rpc("has_role", {
-      _user_id: sessionUserId,
-      _role: "admin",
+    const { data, error } = await supabase.functions.invoke("admin-users", {
+      body: { action: "check" },
     });
-    const nextIsAdmin = !error && data === true;
+    const nextIsAdmin = !error && data?.isAdmin === true;
     _cachedAdminState = nextIsAdmin;
     setIsAdmin(nextIsAdmin);
     setLoading(false);
@@ -65,11 +64,10 @@ let _cachedAdminState = false;
 // Initialize cache
 supabase.auth.onAuthStateChange(async (_event, session) => {
   if (session?.user) {
-    const { data, error } = await supabase.rpc("has_role", {
-      _user_id: session.user.id,
-      _role: "admin",
+    const { data, error } = await supabase.functions.invoke("admin-users", {
+      body: { action: "check" },
     });
-    _cachedAdminState = !error && data === true;
+    _cachedAdminState = !error && data?.isAdmin === true;
   } else {
     _cachedAdminState = false;
   }
@@ -79,10 +77,9 @@ supabase.auth.onAuthStateChange(async (_event, session) => {
 (async () => {
   const { data: { session } } = await supabase.auth.getSession();
   if (session?.user) {
-    const { data, error } = await supabase.rpc("has_role", {
-      _user_id: session.user.id,
-      _role: "admin",
+    const { data, error } = await supabase.functions.invoke("admin-users", {
+      body: { action: "check" },
     });
-    _cachedAdminState = !error && data === true;
+    _cachedAdminState = !error && data?.isAdmin === true;
   }
 })();
