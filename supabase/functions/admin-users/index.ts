@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-type Action = "list" | "set-admin";
+type Action = "check" | "list" | "set-admin";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -37,6 +37,9 @@ Deno.serve(async (req) => {
     if (authError || !authData.user) return json({ error: "Unauthorized" }, 401);
 
     const adminClient = createClient(supabaseUrl, serviceKey);
+    const body = await req.json().catch(() => ({}));
+    const action = (body.action || "list") as Action;
+
     const { data: roleRow } = await adminClient
       .from("user_roles")
       .select("role")
@@ -54,10 +57,13 @@ Deno.serve(async (req) => {
           .maybeSingle()
       : { data: null } as any;
 
-    if (!roleRow && !emailRoleRow) return json({ error: "Forbidden" }, 403);
+    const isAdmin = Boolean(roleRow || emailRoleRow);
 
-    const body = await req.json().catch(() => ({}));
-    const action = (body.action || "list") as Action;
+    if (action === "check") {
+      return json({ isAdmin, userId: authData.user.id, email: actorEmail || null });
+    }
+
+    if (!isAdmin) return json({ error: "Forbidden" }, 403);
 
     if (action === "list") {
       const page = Math.max(Number(body.page || 1), 1);
