@@ -82,7 +82,10 @@ const AdminUsers = () => {
     loadUsers();
   }, [authLoading, isAdmin, userId, navigate, page, debouncedSearch]);
 
-  const setAdmin = async (target: AdminUserRow, next: boolean) => {
+  const confirmAdminChange = async () => {
+    if (!pendingChange) return;
+    const { user: target, next } = pendingChange;
+    setPendingChange(null);
     setSavingId(target.id);
     const { error } = await supabase.functions.invoke("admin-users", {
       body: { action: "set-admin", userId: target.id, isAdmin: next },
@@ -91,7 +94,7 @@ const AdminUsers = () => {
     if (error) {
       toast.error(error.message || "Erro ao alterar permissão.");
     } else {
-      toast.success(next ? "Admin ativado." : "Admin removido.");
+      toast.success(next ? "Admin ativado e auditado." : "Admin removido e auditado.");
       await loadUsers();
     }
     setSavingId(null);
@@ -114,7 +117,10 @@ const AdminUsers = () => {
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <div className="border border-border p-6 text-center">
+          <Loader2 className="mx-auto mb-3 h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="font-body text-xs uppercase tracking-widest text-muted-foreground">Verificando permissão admin...</p>
+        </div>
       </div>
     );
   }
