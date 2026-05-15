@@ -43,7 +43,17 @@ Deno.serve(async (req) => {
       .eq("user_id", userData.user.id)
       .eq("role", "admin")
       .maybeSingle();
-    if (!roleRow) {
+    const actorEmail = userData.user.email || "";
+    const { data: emailRoleRow } = actorEmail
+      ? await supabase
+          .from("admin_email_roles")
+          .select("role")
+          .eq("role", "admin")
+          .ilike("email", actorEmail)
+          .maybeSingle()
+      : { data: null } as any;
+
+    if (!roleRow && !emailRoleRow) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

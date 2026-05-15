@@ -220,8 +220,9 @@ const AdminAuditLogs = () => {
           />
           <select value={fnFilter} onChange={(e) => setFnFilter(e.target.value)} className={inputClass}>
             <option value="">Todas as funções</option>
+            <option value="admin-users">admin-users</option>
             {functions.map((f) => (
-              <option key={f} value={f}>{f}</option>
+              f !== "admin-users" && <option key={f} value={f}>{f}</option>
             ))}
           </select>
           <input
@@ -280,7 +281,14 @@ const AdminAuditLogs = () => {
                   {logs.map((l) => (
                     <tr key={l.id} className="border-t border-border align-top">
                       <td className="px-3 py-2 text-muted-foreground">{formatDate(l.created_at)}</td>
-                      <td className="px-3 py-2 text-foreground">{l.function_name}</td>
+                      <td className="px-3 py-2 text-foreground">
+                        <div>{l.function_name}</div>
+                        {l.function_name === "admin-users" && (
+                          <span className="mt-1 inline-flex border border-accent px-2 py-0.5 font-body text-[10px] uppercase tracking-wider text-accent">
+                            Permissão admin
+                          </span>
+                        )}
+                      </td>
                       <td className="px-3 py-2 font-mono text-[11px] text-muted-foreground">
                         {l.user_id ? l.user_id.slice(0, 8) + "..." : "—"}
                       </td>

@@ -23,14 +23,8 @@ const AdminPanel = () => {
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const { cartOpen, setCartOpen } = useCart();
-  const { isAdmin, loading: authLoading, userId, logout } = useAdminAuth();
+  const { isAdmin, loading: authLoading, email, logout } = useAdminAuth();
   const [orders, setOrders] = useState<DBOrder[]>([]);
-
-  useEffect(() => {
-    if (!authLoading && !isAdmin) {
-      navigate(userId ? "/" : "/auth?redirect=/admin", { replace: true });
-    }
-  }, [authLoading, isAdmin, userId, navigate]);
 
   useEffect(() => {
     if (isAdmin) fetchOrders();
@@ -72,12 +66,28 @@ const AdminPanel = () => {
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <div className="border border-border p-6 text-center">
+          <Loader2 className="mx-auto mb-3 h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="font-body text-xs uppercase tracking-widest text-muted-foreground">Verificando acesso admin...</p>
+        </div>
       </div>
     );
   }
 
-  if (!isAdmin) return null;
+  if (!isAdmin) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="max-w-md border border-border p-6 text-center">
+          <Shield className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+          <h1 className="font-display text-xl font-bold uppercase tracking-wider text-foreground">Sem permissão admin</h1>
+          <p className="mt-2 font-body text-sm text-muted-foreground">Faça login com uma conta admin para acessar o painel.</p>
+          <button onClick={() => navigate("/auth?redirect=/admin")} className="mt-5 border border-accent px-5 py-2 font-body text-xs uppercase tracking-widest text-accent hover:bg-accent hover:text-accent-foreground">
+            Entrar como admin
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -102,6 +112,9 @@ const AdminPanel = () => {
         </div>
 
         <div className="mb-6 flex flex-wrap gap-3">
+          <div className="inline-flex items-center gap-2 border border-accent px-4 py-2 font-body text-xs uppercase tracking-widest text-accent">
+            <Shield className="h-4 w-4" /> Admin ativo {email ? `• ${email}` : ""}
+          </div>
           <button
             onClick={() => navigate("/admin/audit-logs")}
             className="inline-flex items-center gap-2 border border-border px-4 py-2 font-body text-xs uppercase tracking-widest text-foreground transition-colors hover:bg-secondary"

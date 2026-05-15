@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, Shield, UserCog } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, Shield, ShieldAlert, UserCog } from "lucide-react";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import ProfileModal from "@/components/ProfileModal";
@@ -8,6 +8,16 @@ import CartSlidePanel from "@/components/CartSlidePanel";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdmin";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface AdminUserRow {
   id: string;
@@ -16,6 +26,7 @@ interface AdminUserRow {
   last_sign_in_at: string | null;
   email_confirmed_at: string | null;
   is_admin: boolean;
+  admin_source?: "user" | "email" | null;
 }
 
 const PAGE_SIZE = 25;
@@ -32,6 +43,7 @@ const AdminUsers = () => {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [pendingChange, setPendingChange] = useState<{ user: AdminUserRow; next: boolean } | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search.trim()), 300);
@@ -63,14 +75,20 @@ const AdminUsers = () => {
 
   useEffect(() => {
     if (authLoading) return;
+    if (!userId) {
+      navigate("/auth?redirect=/admin/usuarios", { replace: true });
+      return;
+    }
     if (!isAdmin) {
-      navigate(userId ? "/" : "/auth?redirect=/admin/usuarios", { replace: true });
       return;
     }
     loadUsers();
   }, [authLoading, isAdmin, userId, navigate, page, debouncedSearch]);
 
-  const setAdmin = async (target: AdminUserRow, next: boolean) => {
+  const confirmAdminChange = async () => {
+    if (!pendingChange) return;
+    const { user: target, next } = pendingChange;
+    setPendingChange(null);
     setSavingId(target.id);
     const { error } = await supabase.functions.invoke("admin-users", {
       body: { action: "set-admin", userId: target.id, isAdmin: next },
@@ -79,7 +97,7 @@ const AdminUsers = () => {
     if (error) {
       toast.error(error.message || "Erro ao alterar permissão.");
     } else {
-      toast.success(next ? "Admin ativado." : "Admin removido.");
+      toast.success(next ? "Admin ativado e auditado." : "Admin removido e auditado.");
       await loadUsers();
     }
     setSavingId(null);
@@ -102,12 +120,28 @@ const AdminUsers = () => {
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <div className="border border-border p-6 text-center">
+          <Loader2 className="mx-auto mb-3 h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="font-body text-xs uppercase tracking-widest text-muted-foreground">Verificando permissão admin...</p>
+        </div>
       </div>
     );
   }
 
-  if (!isAdmin) return null;
+  if (!isAdmin) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="max-w-md border border-border p-6 text-center">
+          <ShieldAlert className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+          <h1 className="font-display text-xl font-bold uppercase tracking-wider text-foreground">Sem permissão admin</h1>
+          <p className="mt-2 font-body text-sm text-muted-foreground">Seu usuário está autenticado, mas ainda não possui permissão admin.</p>
+          <button onClick={() => navigate("/")} className="mt-5 border border-border px-5 py-2 font-body text-xs uppercase tracking-widest text-foreground hover:bg-foreground hover:text-background">
+            Voltar para a loja
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -132,6 +166,9 @@ const AdminUsers = () => {
             <p className="font-body text-xs text-muted-foreground">
               Gerencie quais contas autenticadas podem acessar painel, produtos e auditorias.
             </p>
+            <div className="mt-4 inline-flex items-center gap-2 border border-accent px-3 py-2 font-body text-[11px] uppercase tracking-widest text-accent">
+              <Shield className="h-3 w-3" /> Você está autenticado como admin
+            </div>
           </div>
           <input
             value={search}
@@ -179,13 +216,18 @@ const AdminUsers = () => {
                         u.is_admin ? "bg-accent text-accent-foreground" : "bg-secondary text-muted-foreground"
                       }`}>
                         {u.is_admin && <Shield className="h-3 w-3" />}
-                        {u.is_admin ? "Admin" : "Usuário"}
+                        {u.is_admin ? (u.admin_source === "email" ? "Admin por e-mail" : "Admin") : "Usuário"}
                       </span>
+                      {u.id === userId && (
+                        <span className="ml-2 inline-flex items-center gap-1 border border-border px-2 py-1 font-body text-[10px] uppercase tracking-wider text-muted-foreground">
+                          Você
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-4 text-right">
                       <button
                         disabled={savingId === u.id || (u.id === userId && u.is_admin)}
-                        onClick={() => setAdmin(u, !u.is_admin)}
+                        onClick={() => setPendingChange({ user: u, next: !u.is_admin })}
                         className={`inline-flex min-w-36 items-center justify-center gap-2 border px-4 py-2 font-body text-[11px] uppercase tracking-widest transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
                           u.is_admin
                             ? "border-border text-muted-foreground hover:border-accent hover:text-accent"
@@ -225,6 +267,27 @@ const AdminUsers = () => {
           </div>
         </div>
       </main>
+
+      <AlertDialog open={!!pendingChange} onOpenChange={(open) => !open && setPendingChange(null)}>
+        <AlertDialogContent className="rounded-none border-border bg-background">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 font-display uppercase tracking-wider text-foreground">
+              <ShieldAlert className="h-5 w-5 text-accent" /> Confirmar permissão
+            </AlertDialogTitle>
+            <AlertDialogDescription className="font-body text-sm text-muted-foreground">
+              {pendingChange?.next
+                ? `Ativar permissão admin para ${pendingChange.user.email || pendingChange.user.id}?`
+                : `Remover permissão admin de ${pendingChange?.user.email || pendingChange?.user.id}?`} Esta ação será registrada nos logs de auditoria.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-none">Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmAdminChange} className="rounded-none bg-accent text-accent-foreground hover:bg-accent/90">
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <ProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
       <CartSlidePanel isOpen={cartOpen} onClose={() => setCartOpen(false)} />

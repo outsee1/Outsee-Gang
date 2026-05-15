@@ -5,13 +5,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-type Action = "list" | "set-admin";
+type Action = "check" | "list" | "set-admin";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+
+const clientIp = (req: Request) =>
+  req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+  req.headers.get("cf-connecting-ip") ||
+  req.headers.get("x-real-ip") ||
+  null;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -31,6 +37,9 @@ Deno.serve(async (req) => {
     if (authError || !authData.user) return json({ error: "Unauthorized" }, 401);
 
     const adminClient = createClient(supabaseUrl, serviceKey);
+    const body = await req.json().catch(() => ({}));
+    const action = (body.action || "list") as Action;
+
     const { data: roleRow } = await adminClient
       .from("user_roles")
       .select("role")
@@ -38,10 +47,23 @@ Deno.serve(async (req) => {
       .eq("role", "admin")
       .maybeSingle();
 
-    if (!roleRow) return json({ error: "Forbidden" }, 403);
+    const actorEmail = authData.user.email || "";
+    const { data: emailRoleRow } = actorEmail
+      ? await adminClient
+          .from("admin_email_roles")
+          .select("role")
+          .eq("role", "admin")
+          .ilike("email", actorEmail)
+          .maybeSingle()
+      : { data: null } as any;
 
-    const body = await req.json().catch(() => ({}));
-    const action = (body.action || "list") as Action;
+    const isAdmin = Boolean(roleRow || emailRoleRow);
+
+    if (action === "check") {
+      return json({ isAdmin, userId: authData.user.id, email: actorEmail || null });
+    }
+
+    if (!isAdmin) return json({ error: "Forbidden" }, 403);
 
     if (action === "list") {
       const page = Math.max(Number(body.page || 1), 1);
@@ -71,6 +93,13 @@ Deno.serve(async (req) => {
       if (rolesError) throw rolesError;
       const adminIds = new Set((roles || []).map((role: any) => role.user_id));
 
+      const { data: emailGrants, error: grantsError } = await adminClient
+        .from("admin_email_roles")
+        .select("email, role")
+        .eq("role", "admin");
+      if (grantsError) throw grantsError;
+      const adminEmails = new Set((emailGrants || []).map((grant: any) => String(grant.email).toLowerCase()));
+
       return json({
         users: pagedUsers.map((user) => ({
           id: user.id,
@@ -78,7 +107,8 @@ Deno.serve(async (req) => {
           created_at: user.created_at,
           last_sign_in_at: user.last_sign_in_at,
           email_confirmed_at: user.email_confirmed_at,
-          is_admin: adminIds.has(user.id),
+          is_admin: adminIds.has(user.id) || adminEmails.has(String(user.email || "").toLowerCase()),
+          admin_source: adminIds.has(user.id) ? "user" : adminEmails.has(String(user.email || "").toLowerCase()) ? "email" : null,
         })),
         page,
         perPage,
@@ -95,6 +125,10 @@ Deno.serve(async (req) => {
         return json({ error: "Você não pode remover seu próprio admin." }, 400);
       }
 
+      const { data: targetUser, error: targetError } = await adminClient.auth.admin.getUserById(targetUserId);
+      if (targetError || !targetUser?.user) return json({ error: "Usuário não encontrado" }, 404);
+      const targetEmail = targetUser.user.email || null;
+
       if (makeAdmin) {
         const { error } = await adminClient
           .from("user_roles")
@@ -107,7 +141,28 @@ Deno.serve(async (req) => {
           .eq("user_id", targetUserId)
           .eq("role", "admin");
         if (error) throw error;
+        if (targetEmail) {
+          const { error: emailGrantError } = await adminClient
+            .from("admin_email_roles")
+            .delete()
+            .ilike("email", targetEmail)
+            .eq("role", "admin");
+          if (emailGrantError) throw emailGrantError;
+        }
       }
+
+      await adminClient.from("audit_logs").insert({
+        function_name: "admin-users",
+        user_id: authData.user.id,
+        ip: clientIp(req),
+        metadata: {
+          action: makeAdmin ? "promote_admin" : "remove_admin",
+          actor_email: actorEmail || null,
+          target_user_id: targetUserId,
+          target_email: targetEmail,
+          result: "success",
+        },
+      });
 
       return json({ success: true });
     }
