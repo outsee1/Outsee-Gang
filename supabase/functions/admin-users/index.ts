@@ -119,6 +119,10 @@ Deno.serve(async (req) => {
         return json({ error: "Você não pode remover seu próprio admin." }, 400);
       }
 
+      const { data: targetUser, error: targetError } = await adminClient.auth.admin.getUserById(targetUserId);
+      if (targetError || !targetUser?.user) return json({ error: "Usuário não encontrado" }, 404);
+      const targetEmail = targetUser.user.email || null;
+
       if (makeAdmin) {
         const { error } = await adminClient
           .from("user_roles")
@@ -132,6 +136,19 @@ Deno.serve(async (req) => {
           .eq("role", "admin");
         if (error) throw error;
       }
+
+      await adminClient.from("audit_logs").insert({
+        function_name: "admin-users",
+        user_id: authData.user.id,
+        ip: clientIp(req),
+        metadata: {
+          action: makeAdmin ? "promote_admin" : "remove_admin",
+          actor_email: actorEmail || null,
+          target_user_id: targetUserId,
+          target_email: targetEmail,
+          result: "success",
+        },
+      });
 
       return json({ success: true });
     }
