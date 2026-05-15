@@ -23,7 +23,7 @@ const AdminPanel = () => {
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const { cartOpen, setCartOpen } = useCart();
-  const { isAdmin, loading: authLoading, userId, email, logout } = useAdminAuth();
+  const { isAdmin, loading: authLoading, email, logout } = useAdminAuth();
   const [orders, setOrders] = useState<DBOrder[]>([]);
 
   useEffect(() => {
