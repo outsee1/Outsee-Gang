@@ -13,6 +13,12 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
+const clientIp = (req: Request) =>
+  req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+  req.headers.get("cf-connecting-ip") ||
+  req.headers.get("x-real-ip") ||
+  null;
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -38,7 +44,17 @@ Deno.serve(async (req) => {
       .eq("role", "admin")
       .maybeSingle();
 
-    if (!roleRow) return json({ error: "Forbidden" }, 403);
+    const actorEmail = authData.user.email || "";
+    const { data: emailRoleRow } = actorEmail
+      ? await adminClient
+          .from("admin_email_roles")
+          .select("role")
+          .eq("role", "admin")
+          .ilike("email", actorEmail)
+          .maybeSingle()
+      : { data: null } as any;
+
+    if (!roleRow && !emailRoleRow) return json({ error: "Forbidden" }, 403);
 
     const body = await req.json().catch(() => ({}));
     const action = (body.action || "list") as Action;
@@ -71,6 +87,13 @@ Deno.serve(async (req) => {
       if (rolesError) throw rolesError;
       const adminIds = new Set((roles || []).map((role: any) => role.user_id));
 
+      const { data: emailGrants, error: grantsError } = await adminClient
+        .from("admin_email_roles")
+        .select("email, role")
+        .eq("role", "admin");
+      if (grantsError) throw grantsError;
+      const adminEmails = new Set((emailGrants || []).map((grant: any) => String(grant.email).toLowerCase()));
+
       return json({
         users: pagedUsers.map((user) => ({
           id: user.id,
@@ -78,7 +101,8 @@ Deno.serve(async (req) => {
           created_at: user.created_at,
           last_sign_in_at: user.last_sign_in_at,
           email_confirmed_at: user.email_confirmed_at,
-          is_admin: adminIds.has(user.id),
+          is_admin: adminIds.has(user.id) || adminEmails.has(String(user.email || "").toLowerCase()),
+          admin_source: adminIds.has(user.id) ? "user" : adminEmails.has(String(user.email || "").toLowerCase()) ? "email" : null,
         })),
         page,
         perPage,
