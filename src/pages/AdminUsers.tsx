@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, Shield, UserCog } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, Shield, ShieldAlert, UserCog } from "lucide-react";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import ProfileModal from "@/components/ProfileModal";
@@ -8,6 +8,16 @@ import CartSlidePanel from "@/components/CartSlidePanel";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminAuth } from "@/hooks/useAdmin";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface AdminUserRow {
   id: string;
@@ -16,6 +26,7 @@ interface AdminUserRow {
   last_sign_in_at: string | null;
   email_confirmed_at: string | null;
   is_admin: boolean;
+  admin_source?: "user" | "email" | null;
 }
 
 const PAGE_SIZE = 25;
@@ -32,6 +43,7 @@ const AdminUsers = () => {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [pendingChange, setPendingChange] = useState<{ user: AdminUserRow; next: boolean } | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search.trim()), 300);
