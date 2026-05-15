@@ -27,12 +27,6 @@ const AdminPanel = () => {
   const [orders, setOrders] = useState<DBOrder[]>([]);
 
   useEffect(() => {
-    if (!authLoading && !isAdmin) {
-      navigate(userId ? "/" : "/auth?redirect=/admin", { replace: true });
-    }
-  }, [authLoading, isAdmin, userId, navigate]);
-
-  useEffect(() => {
     if (isAdmin) fetchOrders();
   }, [isAdmin]);
 
