@@ -135,6 +135,14 @@ Deno.serve(async (req) => {
           .eq("user_id", targetUserId)
           .eq("role", "admin");
         if (error) throw error;
+        if (targetEmail) {
+          const { error: emailGrantError } = await adminClient
+            .from("admin_email_roles")
+            .delete()
+            .ilike("email", targetEmail)
+            .eq("role", "admin");
+          if (emailGrantError) throw emailGrantError;
+        }
       }
 
       await adminClient.from("audit_logs").insert({
