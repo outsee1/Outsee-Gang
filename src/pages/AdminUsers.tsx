@@ -150,6 +150,9 @@ const AdminUsers = () => {
             <p className="font-body text-xs text-muted-foreground">
               Gerencie quais contas autenticadas podem acessar painel, produtos e auditorias.
             </p>
+            <div className="mt-4 inline-flex items-center gap-2 border border-accent px-3 py-2 font-body text-[11px] uppercase tracking-widest text-accent">
+              <Shield className="h-3 w-3" /> Você está autenticado como admin
+            </div>
           </div>
           <input
             value={search}
@@ -197,13 +200,18 @@ const AdminUsers = () => {
                         u.is_admin ? "bg-accent text-accent-foreground" : "bg-secondary text-muted-foreground"
                       }`}>
                         {u.is_admin && <Shield className="h-3 w-3" />}
-                        {u.is_admin ? "Admin" : "Usuário"}
+                        {u.is_admin ? (u.admin_source === "email" ? "Admin por e-mail" : "Admin") : "Usuário"}
                       </span>
+                      {u.id === userId && (
+                        <span className="ml-2 inline-flex items-center gap-1 border border-border px-2 py-1 font-body text-[10px] uppercase tracking-wider text-muted-foreground">
+                          Você
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-4 text-right">
                       <button
                         disabled={savingId === u.id || (u.id === userId && u.is_admin)}
-                        onClick={() => setAdmin(u, !u.is_admin)}
+                        onClick={() => setPendingChange({ user: u, next: !u.is_admin })}
                         className={`inline-flex min-w-36 items-center justify-center gap-2 border px-4 py-2 font-body text-[11px] uppercase tracking-widest transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
                           u.is_admin
                             ? "border-border text-muted-foreground hover:border-accent hover:text-accent"
