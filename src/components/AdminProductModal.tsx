@@ -153,9 +153,15 @@ const AdminProductModal = ({ isOpen, onClose, product }: AdminProductModalProps)
         toast.success("Produto criado!");
       }
       onClose();
-    } catch (err) {
-      console.error(err);
-      toast.error("Erro ao salvar produto.");
+    } catch (err: any) {
+      console.error("[AdminProductModal] save error:", err);
+      const msg =
+        err?.context?.error ||
+        err?.message ||
+        err?.error_description ||
+        err?.error ||
+        (typeof err === "string" ? err : "Erro desconhecido");
+      toast.error(`Erro ao salvar: ${msg}`);
     } finally {
       setUploading(false);
     }
