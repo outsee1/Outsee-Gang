@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, User, ShoppingBag, X, Loader2, ArrowRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useProducts } from "@/hooks/useProducts";
 import brandLogo from "@/assets/brand-logo.png";
@@ -29,8 +29,10 @@ const Header = ({ onProfileClick }: HeaderProps) => {
         setSearchOpen(false);
       }
     };
-    if (searchOpen) document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
+    // Use 'click' (not 'mousedown') so that clicks on suggestion links inside
+    // the dropdown can navigate before the dropdown unmounts.
+    if (searchOpen) document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
   }, [searchOpen]);
 
   const results = useMemo(() => {
@@ -43,12 +45,6 @@ const Header = ({ onProfileClick }: HeaderProps) => {
       )
       .slice(0, 6);
   }, [products, debounced]);
-
-  const goToProduct = (id: string) => {
-    setSearchOpen(false);
-    setQuery("");
-    navigate(`/produto/${id}`);
-  };
 
   const goToResults = () => {
     const q = query.trim();
@@ -108,9 +104,10 @@ const Header = ({ onProfileClick }: HeaderProps) => {
                   ) : (
                     <>
                       {results.map((p) => (
-                      <button
+                      <Link
                         key={p.id}
-                        onClick={() => goToProduct(p.id)}
+                        to={`/produto/${p.id}`}
+                        onClick={() => { setSearchOpen(false); setQuery(""); }}
                         className="flex w-full items-center gap-3 border-b border-border p-3 text-left transition-colors last:border-b-0 hover:bg-secondary"
                       >
                         <div className="h-12 w-12 flex-shrink-0 overflow-hidden bg-secondary">
@@ -127,7 +124,7 @@ const Header = ({ onProfileClick }: HeaderProps) => {
                         <span className="font-display text-sm font-bold text-foreground">
                           R$ {p.price.toLocaleString("pt-BR")}
                         </span>
-                      </button>
+                      </Link>
                       ))}
                       <button
                         onClick={goToResults}
