@@ -21,12 +21,20 @@ interface ColorEntry {
   imagePreview?: string | null;
 }
 
+const sanitizeKey = (s: string) =>
+  s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9._/-]/g, "_")
+    .replace(/_+/g, "_");
+
 const uploadImage = async (file: File, path: string): Promise<string> => {
+  const safePath = sanitizeKey(path);
   const { error } = await supabase.storage
     .from("product-images")
-    .upload(path, file, { upsert: true });
+    .upload(safePath, file, { upsert: true });
   if (error) throw error;
-  const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+  const { data } = supabase.storage.from("product-images").getPublicUrl(safePath);
   return data.publicUrl;
 };
 
