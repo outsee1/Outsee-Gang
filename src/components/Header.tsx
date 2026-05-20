@@ -107,7 +107,14 @@ const Header = ({ onProfileClick }: HeaderProps) => {
                       <Link
                         key={p.id}
                         to={`/produto/${p.id}`}
-                        onClick={() => { setSearchOpen(false); setQuery(""); }}
+                        onClick={() => {
+                          // Defer state updates so React Router completes
+                          // navigation before this component unmounts.
+                          setTimeout(() => {
+                            setSearchOpen(false);
+                            setQuery("");
+                          }, 0);
+                        }}
                         className="flex w-full items-center gap-3 border-b border-border p-3 text-left transition-colors last:border-b-0 hover:bg-secondary"
                       >
                         <div className="h-12 w-12 flex-shrink-0 overflow-hidden bg-secondary">

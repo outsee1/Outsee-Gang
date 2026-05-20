@@ -4,6 +4,7 @@ import { X, Loader2, Trash2, Upload, Image as ImageIcon, Plus } from "lucide-rea
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Product, useAdminUpdateProduct, useAdminCreateProduct, useAdminDeleteProduct } from "@/hooks/useProducts";
+import { uploadProductImage, friendlyUploadError } from "@/lib/storageUpload";
 
 interface AdminProductModalProps {
   isOpen: boolean;
@@ -21,22 +22,7 @@ interface ColorEntry {
   imagePreview?: string | null;
 }
 
-const sanitizeKey = (s: string) =>
-  s
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9._/-]/g, "_")
-    .replace(/_+/g, "_");
-
-const uploadImage = async (file: File, path: string): Promise<string> => {
-  const safePath = sanitizeKey(path);
-  const { error } = await supabase.storage
-    .from("product-images")
-    .upload(safePath, file, { upsert: true });
-  if (error) throw error;
-  const { data } = supabase.storage.from("product-images").getPublicUrl(safePath);
-  return data.publicUrl;
-};
+const uploadImage = uploadProductImage;
 
 const AdminProductModal = ({ isOpen, onClose, product }: AdminProductModalProps) => {
   const isEdit = !!product;
@@ -163,13 +149,9 @@ const AdminProductModal = ({ isOpen, onClose, product }: AdminProductModalProps)
       onClose();
     } catch (err: any) {
       console.error("[AdminProductModal] save error:", err);
-      const msg =
-        err?.context?.error ||
-        err?.message ||
-        err?.error_description ||
-        err?.error ||
-        (typeof err === "string" ? err : "Erro desconhecido");
-      toast.error(`Erro ao salvar: ${msg}`);
+      toast.error(friendlyUploadError(err?.context?.error ? { message: err.context.error } : err), {
+        duration: 8000,
+      });
     } finally {
       setUploading(false);
     }
