@@ -3,12 +3,10 @@ import "@testing-library/jest-dom";
 // jsdom doesn't implement URL.createObjectURL — stub it for components
 // that preview File inputs.
 if (typeof URL.createObjectURL === "undefined") {
-  // @ts-expect-error stub for tests
-  URL.createObjectURL = () => "blob:mock";
+  (URL as any).createObjectURL = () => "blob:mock";
 }
 if (typeof URL.revokeObjectURL === "undefined") {
-  // @ts-expect-error stub for tests
-  URL.revokeObjectURL = () => {};
+  (URL as any).revokeObjectURL = () => {};
 }
 
 Object.defineProperty(window, "matchMedia", {
